@@ -501,6 +501,20 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
     public abstract List<BlockVector2D> getPoints();
 
     /**
+     * Get the vector of region lenght.
+     *
+     * @return the vector of region lenght
+     */
+    public abstract Vector getLenght();
+
+    /**
+     * Get the number of blocks in this region area.
+     *
+     * @return the area of this region in blocks
+     */
+    public abstract int area();
+
+    /**
      * Get the number of blocks in this region.
      *
      * @return the volume of this region in blocks

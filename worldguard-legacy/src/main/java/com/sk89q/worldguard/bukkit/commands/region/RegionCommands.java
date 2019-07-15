@@ -224,9 +224,10 @@ public final class RegionCommands extends RegionCommandsBase {
         RegionManager manager = checkRegionManager(plugin, player.getWorld());
 
         checkRegionDoesNotExist(manager, id, false);
-        ProtectedRegion region = checkRegionFromSelection(player, id);
 
         WorldConfiguration wcfg = plugin.getGlobalStateManager().get(player.getWorld());
+
+        ProtectedRegion region = checkRegionFromSelection(player, id);
 
         // Check whether the player has created too many regions
         if (!permModel.mayClaimRegionsUnbounded()) {
@@ -248,7 +249,7 @@ public final class RegionCommands extends RegionCommandsBase {
             }
         }
 
-        // We have to check whether this region violates the space of any other reion
+        // We have to check whether this region violates the space of any other region
         ApplicableRegionSet regions = manager.getApplicableRegions(region);
 
         // Check if this region overlaps any other region
@@ -263,7 +264,7 @@ public final class RegionCommands extends RegionCommandsBase {
             }
         }
 
-        if (wcfg.maxClaimVolume >= Integer.MAX_VALUE) {
+        if (wcfg.getMaxClaimValues(player) >= Integer.MAX_VALUE) {
             throw new CommandException("The maximum claim volume get in the configuration is higher than is supported. " +
                     "Currently, it must be " + Integer.MAX_VALUE+ " or smaller. Please contact a server administrator.");
         }
@@ -274,12 +275,35 @@ public final class RegionCommands extends RegionCommandsBase {
                 throw new CommandException("Polygons are currently not supported for /rg claim.");
             }
 
-            if (region.volume() > wcfg.maxClaimVolume) {
+            if (wcfg.protectAreaInsteadVolume && region.area() > wcfg.getMaxClaimValues(player)) {
                 player.sendMessage(ChatColor.RED + "This region is too large to claim.");
                 player.sendMessage(ChatColor.RED +
-                        "Max. volume: " + wcfg.maxClaimVolume + ", your volume: " + region.volume());
+                        "Max. area: " + wcfg.getMaxClaimValues(player) + ", your area: " + region.area()+".");
                 return;
             }
+
+            else if (region.volume() > wcfg.getMaxClaimValues(player)) {
+                player.sendMessage(ChatColor.RED + "This region is too large to claim.");
+                player.sendMessage(ChatColor.RED +
+                        "Max. volume: " + wcfg.getMaxClaimValues(player) + ", your volume: " + region.volume()+".");
+                return;
+            }
+
+            else if (wcfg.useRegionMaximumLenght && !permModel.mayIgnoreMaxLenghtRegion()){
+                if (region.getLenght().getBlockX() > wcfg.getMaxRegionLenghtValues(player) ||
+                        region.getLenght().getBlockZ() > wcfg.getMaxRegionLenghtValues(player)){
+
+                    player.sendMessage(ChatColor.RED + "This region area lenght is too large to claim.");
+                    player.sendMessage(ChatColor.RED +
+                            "Max. area lenght: " + wcfg.getMaxRegionLenghtValues(player) + ", your area lenght: " +
+                                "X: " + region.getLenght().getBlockX()+ ", Z: " + region.getLenght().getBlockZ() + ".");
+                    return;
+                }
+            }
+        }
+
+        if (wcfg.autoSetMaximumRegionProtectHeight){
+            expandVert(player);
         }
 
         RegionAdder task = new RegionAdder(plugin, manager, region);

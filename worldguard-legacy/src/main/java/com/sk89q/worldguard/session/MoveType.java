@@ -24,7 +24,7 @@ import org.bukkit.Location;
 /**
  * Types of movements.
  *
- * <p>Used with {@link Session#testMoveTo(Location, MoveType)}.</p>
+ * <p>Used with { @link Session#testMoveTo(Location, MoveType) invalid link}.</p>
  */
 public enum MoveType {
 

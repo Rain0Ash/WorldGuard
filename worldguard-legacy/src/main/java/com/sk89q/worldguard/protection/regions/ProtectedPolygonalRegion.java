@@ -183,6 +183,20 @@ public class ProtectedPolygonalRegion extends ProtectedRegion {
     }
 
     @Override
+    public Vector getLenght(){
+        return new Vector(
+                max.getBlockX() - min.getBlockX() + 1,
+                max.getBlockY() - min.getBlockY() + 1,
+                max.getBlockZ() - min.getBlockZ() + 1
+                );
+    }
+
+    @Override
+    public int area(){
+        return 0;
+    }
+
+    @Override
     public int volume() {
         // TODO: Fix this -- the previous algorithm returned incorrect results, but the current state of this method is even worse
         return 0;

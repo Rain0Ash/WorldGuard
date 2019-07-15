@@ -26,6 +26,7 @@ import com.sk89q.minecraft.util.commands.CommandContext;
 import com.sk89q.minecraft.util.commands.CommandException;
 import com.sk89q.minecraft.util.commands.CommandPermissionsException;
 import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.bukkit.WorldConfiguration;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.bukkit.commands.AsyncCommandHelper;
 import com.sk89q.worldguard.domains.DefaultDomain;
@@ -201,6 +202,7 @@ public class MemberCommands extends RegionCommandsBase {
     public void removeOwner(CommandContext args, CommandSender sender) throws CommandException {
         warnAboutSaveFailures(sender);
 
+        Player player = plugin.checkPlayer(sender);
         World world = checkWorld(args, sender, 'w'); // Get the world
         String id = args.getString(0);
         RegionManager manager = checkRegionManager(plugin, world);
@@ -211,7 +213,10 @@ public class MemberCommands extends RegionCommandsBase {
             throw new CommandPermissionsException();
         }
 
+        WorldConfiguration wcfg = plugin.getGlobalStateManager().get(player.getWorld());
+
         ListenableFuture<?> future;
+
 
         if (args.hasFlag('a')) {
             region.getOwners().removeAll();
@@ -219,7 +224,7 @@ public class MemberCommands extends RegionCommandsBase {
             future = Futures.immediateFuture(null);
         } else {
             if (args.argsLength() < 2) {
-                throw new CommandException("List some names to remove, or use -a to remove all.");
+                throw new CommandException("List some names to remove, or use -a to remove all owners except yourself (or except first owner if you aren't in owners list).");
             }
 
             // Resolve owners asynchronously

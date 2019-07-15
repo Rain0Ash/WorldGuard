@@ -154,14 +154,37 @@ public class ProtectedCuboidRegion extends ProtectedRegion {
     }
 
     @Override
-    public int volume() {
-        int xLength = max.getBlockX() - min.getBlockX() + 1;
-        int yLength = max.getBlockY() - min.getBlockY() + 1;
-        int zLength = max.getBlockZ() - min.getBlockZ() + 1;
+    public Vector getLenght(){
+        return new Vector(
+                max.getBlockX() - min.getBlockX() + 1,
+                max.getBlockY() - min.getBlockY() + 1,
+                max.getBlockZ() - min.getBlockZ() + 1
+        );
+    }
+
+    @Override
+    public int area() {
+        Vector lenght = getLenght();
 
         try {
-            long v = MathUtils.checkedMultiply(xLength, yLength);
-            v = MathUtils.checkedMultiply(v, zLength);
+            long a = MathUtils.checkedMultiply(lenght.getBlockX(), lenght.getBlockZ());
+            if (a > Integer.MAX_VALUE) {
+                return Integer.MAX_VALUE;
+            } else {
+                return (int) a;
+            }
+        } catch (ArithmeticException e) {
+            return Integer.MAX_VALUE;
+        }
+    }
+
+    @Override
+    public int volume() {
+        Vector length = getLenght();
+
+        try {
+            long v = MathUtils.checkedMultiply(length.getBlockX(), length.getBlockZ());
+            v = MathUtils.checkedMultiply(v, length.getBlockY());
             if (v > Integer.MAX_VALUE) {
                 return Integer.MAX_VALUE;
             } else {
