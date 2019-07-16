@@ -19,6 +19,8 @@
 
 package com.sk89q.worldguard.bukkit.commands.region;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
@@ -26,6 +28,9 @@ import com.sk89q.minecraft.util.commands.CommandContext;
 import com.sk89q.minecraft.util.commands.CommandException;
 import com.sk89q.worldedit.BlockVector;
 import com.sk89q.worldedit.Vector;
+import com.sk89q.worldedit.LocalSession;
+import com.sk89q.worldedit.bukkit.BukkitWorld;
+import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldedit.bukkit.selections.CuboidSelection;
 import com.sk89q.worldedit.bukkit.selections.Polygonal2DSelection;
@@ -46,6 +51,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Set;
 
@@ -395,4 +401,27 @@ class RegionCommandsBase {
         region.setFlag(flag, flag.parseInput(FlagContext.create().setSender(sender).setInput(value).setObject("region", region).build()));
     }
 
+    private static WorldEditPlugin getWorldEditPlugin() {
+        return JavaPlugin.getPlugin(WorldEditPlugin.class);
+    }
+
+    public static boolean expandVert(Player player) throws CommandException{
+
+        LocalSession session = getWorldEditPlugin().getSession(player);
+
+        checkNotNull(player.getWorld());
+        com.sk89q.worldedit.world.World worldEditWorld = new BukkitWorld(player.getWorld());
+        try {
+            Region region = session.getSelection(worldEditWorld);
+            region.expand(
+                    new BlockVector(0, (worldEditWorld.getMaxY() + 1), 0),
+                    new BlockVector(0, -(worldEditWorld.getMaxY() + 1), 0)
+            );
+            session.getRegionSelector(worldEditWorld).learnChanges();
+            return true;
+        } catch (Throwable e) {
+            player.sendMessage(e.toString());
+        }
+        return false;
+    }
 }

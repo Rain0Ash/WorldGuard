@@ -2,6 +2,9 @@
 /.project
 /.settings
 /target
+build.py
+worldguard-6.2.jar
+worldguard.jar
 
 .DS_Store
 
@@ -14,4 +17,4 @@
 
 /.gradle
 **/build
-
+**/out

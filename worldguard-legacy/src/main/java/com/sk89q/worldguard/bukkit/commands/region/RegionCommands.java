@@ -71,6 +71,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -213,7 +215,7 @@ public final class RegionCommands extends RegionCommandsBase {
         Player player = plugin.checkPlayer(sender);
         LocalPlayer localPlayer = plugin.wrapPlayer(player);
         RegionPermissionModel permModel = getPermissionModel(sender);
-        
+
         // Check permissions
         if (!permModel.mayClaim()) {
             throw new CommandPermissionsException();
@@ -224,9 +226,17 @@ public final class RegionCommands extends RegionCommandsBase {
         RegionManager manager = checkRegionManager(plugin, player.getWorld());
 
         checkRegionDoesNotExist(manager, id, false);
-        ProtectedRegion region = checkRegionFromSelection(player, id);
 
         WorldConfiguration wcfg = plugin.getGlobalStateManager().get(player.getWorld());
+
+        if (wcfg.autoSetMaximumRegionProtectHeight){
+            if (expandVert(player)){
+                player.sendMessage(ChatColor.YELLOW + "Selection was been vertical expanded.");
+            }
+        }
+
+        ProtectedRegion region = checkRegionFromSelection(player, id);
+        setPlayerSelection(player, region);
 
         // Check whether the player has created too many regions
         if (!permModel.mayClaimRegionsUnbounded()) {
@@ -248,7 +258,7 @@ public final class RegionCommands extends RegionCommandsBase {
             }
         }
 
-        // We have to check whether this region violates the space of any other reion
+        // We have to check whether this region violates the space of any other region
         ApplicableRegionSet regions = manager.getApplicableRegions(region);
 
         // Check if this region overlaps any other region
@@ -263,7 +273,7 @@ public final class RegionCommands extends RegionCommandsBase {
             }
         }
 
-        if (wcfg.maxClaimVolume >= Integer.MAX_VALUE) {
+        if (wcfg.getMaxClaimValues(player) >= Integer.MAX_VALUE) {
             throw new CommandException("The maximum claim volume get in the configuration is higher than is supported. " +
                     "Currently, it must be " + Integer.MAX_VALUE+ " or smaller. Please contact a server administrator.");
         }
@@ -274,11 +284,30 @@ public final class RegionCommands extends RegionCommandsBase {
                 throw new CommandException("Polygons are currently not supported for /rg claim.");
             }
 
-            if (region.volume() > wcfg.maxClaimVolume) {
+            if (wcfg.protectAreaInsteadVolume && region.area() > wcfg.getMaxClaimValues(player)) {
                 player.sendMessage(ChatColor.RED + "This region is too large to claim.");
                 player.sendMessage(ChatColor.RED +
-                        "Max. volume: " + wcfg.maxClaimVolume + ", your volume: " + region.volume());
+                        "Max. area: " + wcfg.getMaxClaimValues(player) + ", your area: " + region.area()+".");
                 return;
+            }
+
+            else if (!wcfg.protectAreaInsteadVolume && region.volume() > wcfg.getMaxClaimValues(player)) {
+                player.sendMessage(ChatColor.RED + "This region is too large to claim.");
+                player.sendMessage(ChatColor.RED +
+                        "Max. volume: " + wcfg.getMaxClaimValues(player) + ", your volume: " + region.volume()+".");
+                return;
+            }
+
+            else if (wcfg.useRegionMaximumLenght && !permModel.mayIgnoreMaxLenghtRegion()){
+                Boolean overmaxX = region.getLenght().getBlockX() > wcfg.getMaxRegionLenghtValues(player);
+                Boolean overmaxZ = region.getLenght().getBlockZ() > wcfg.getMaxRegionLenghtValues(player);
+                if (overmaxX || overmaxZ){
+                    player.sendMessage(ChatColor.RED + "This region coordinate lenght is too large to claim.");
+                    player.sendMessage(ChatColor.RED + "Max. area coordinate lenght: " + wcfg.getMaxRegionLenghtValues(player) + ", your area coordinate lenght: ");
+                    if (overmaxX) player.sendMessage(ChatColor.RED + "X: " + region.getLenght().getBlockX() + " is overmaxed.");
+                    if (overmaxZ) player.sendMessage(ChatColor.RED + "Z: " + region.getLenght().getBlockZ() + " is overmaxed.");
+                    return;
+                }
             }
         }
 
@@ -498,7 +527,7 @@ public final class RegionCommands extends RegionCommandsBase {
         // We didn't find the flag, so let's print a list of flags that the user
         // can use, and do nothing afterwards
         if (foundFlag == null) {
-            StringBuilder list = new StringBuilder();
+            ArrayList<String> flagList = new ArrayList<>();
 
             // Need to build a list
             for (Flag<?> flag : flagRegistry) {
@@ -507,15 +536,30 @@ public final class RegionCommands extends RegionCommandsBase {
                     continue;
                 }
 
-                if (list.length() > 0) {
+                flagList.add(flag.getName());
+            }
+
+            Collections.sort(flagList);
+
+            StringBuilder list = new StringBuilder();
+
+            for (int i = 0; i < flagList.size(); i++) {
+                String flag = flagList.get(i);
+
+                if (i % 2 == 0) {
+                    list.append(ChatColor.GRAY);
+                } else {
+                    list.append(ChatColor.RED);
+                }
+
+                list.append(flag);
+                if ((i + 1) < flagList.size()) {
                     list.append(", ");
                 }
-                
-                list.append(flag.getName());
             }
 
             sender.sendMessage(ChatColor.RED + "Unknown flag specified: " + flagName);
-            sender.sendMessage(ChatColor.RED + "Available " + "flags: " + list);
+            sender.sendMessage(ChatColor.RED + "Available flags: " + list);
             
             return;
         }

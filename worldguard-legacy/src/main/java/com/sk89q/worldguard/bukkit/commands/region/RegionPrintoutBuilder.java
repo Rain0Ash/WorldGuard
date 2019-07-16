@@ -244,7 +244,16 @@ public class RegionPrintoutBuilder implements Callable<String> {
         builder.append(ChatColor.YELLOW);
         builder.append(" (").append(min.getBlockX()).append(",").append(min.getBlockY()).append(",").append(min.getBlockZ()).append(")");
         builder.append(" -> (").append(max.getBlockX()).append(",").append(max.getBlockY()).append(",").append(max.getBlockZ()).append(")");
-        
+
+        newLine();
+    }
+
+    public void appendSize() {
+        builder.append(ChatColor.BLUE);
+        builder.append("Size:");
+        builder.append(ChatColor.YELLOW);
+        builder.append(" area: ").append(region.area()).append(", ").append("volume: ").append(region.volume()).append(".");
+
         newLine();
     }
 
@@ -259,6 +268,7 @@ public class RegionPrintoutBuilder implements Callable<String> {
         appendParents();
         appendDomain();
         appendBounds();
+        appendSize();
 
         if (cache != null) {
             builder.append(ChatColor.GRAY).append("Any names suffixed by * are 'last seen names' and may not be up to date.");

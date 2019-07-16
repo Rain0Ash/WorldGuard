@@ -70,9 +70,9 @@ public class RegionPermissionModel extends AbstractPermissionModel {
         return hasPluginPermission("region.claim");
     }
     
-    public boolean mayClaimRegionsUnbounded() {
-        return hasPluginPermission("region.unlimited");
-    }
+    public boolean mayClaimRegionsUnbounded() { return hasPluginPermission("region.unlimited"); }
+
+    public boolean mayIgnoreMaxLenghtRegion() { return hasPluginPermission("region.unlimlenght"); }
     
     public boolean mayDelete(ProtectedRegion region) {
         return hasPatternPermission("remove", region);
@@ -162,6 +162,8 @@ public class RegionPermissionModel extends AbstractPermissionModel {
     public boolean mayRemoveOwners(ProtectedRegion region) {
         return hasPatternPermission("removeowner", region);
     }
+
+    public boolean mayRemoveLastOwner(ProtectedRegion region) { return hasPatternPermission("removelastowner", region); }
     
     /**
      * Checks to see if the given sender has permission to modify the given region

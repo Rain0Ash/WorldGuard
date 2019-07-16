@@ -794,6 +794,10 @@ public class EventAbstractionListener extends AbstractListener {
         InventoryHolder sourceHolder = event.getSource().getHolder();
         InventoryHolder targetHolder = event.getDestination().getHolder();
 
+        if (causeHolder instanceof Hopper && getPlugin().getGlobalStateManager().get(((Hopper) causeHolder).getWorld()).ignoreHopperMoveEvents) {
+            return;
+        }
+
         Entry entry;
 
         if ((entry = moveItemDebounce.tryDebounce(event)) != null) {
@@ -963,8 +967,14 @@ public class EventAbstractionListener extends AbstractListener {
         } else if (holder instanceof BlockState) {
             Events.fireToCancel(originalEvent, new UseBlockEvent(originalEvent, cause, ((BlockState) holder).getBlock()));
         } else if (holder instanceof DoubleChest) {
-            Events.fireToCancel(originalEvent, new UseBlockEvent(originalEvent, cause, (((Chest) ((DoubleChest) holder).getLeftSide()).getBlock())));
-            Events.fireToCancel(originalEvent, new UseBlockEvent(originalEvent, cause, (((Chest) ((DoubleChest) holder).getRightSide()).getBlock())));
+            InventoryHolder left = ((DoubleChest) holder).getLeftSide();
+            InventoryHolder right = ((DoubleChest) holder).getRightSide();
+            if (left instanceof Chest) {
+                Events.fireToCancel(originalEvent, new UseBlockEvent(originalEvent, cause, ((Chest) left).getBlock()));
+            }
+            if (right instanceof Chest) {
+                Events.fireToCancel(originalEvent, new UseBlockEvent(originalEvent, cause, ((Chest) right).getBlock()));
+            }
         }
     }
 

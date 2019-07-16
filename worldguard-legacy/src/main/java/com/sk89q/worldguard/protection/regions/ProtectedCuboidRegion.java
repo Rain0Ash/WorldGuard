@@ -125,9 +125,9 @@ public class ProtectedCuboidRegion extends ProtectedRegion {
         final double x = pt.getX();
         final double y = pt.getY();
         final double z = pt.getZ();
-        return x >= min.getBlockX() && x < max.getBlockX()+1
-                && y >= min.getBlockY() && y < max.getBlockY()+1
-                && z >= min.getBlockZ() && z < max.getBlockZ()+1;
+        return x >= min.getBlockX() && x < max.getBlockX() + 1
+                && y >= min.getBlockY() && y < max.getBlockY() + 1
+                && z >= min.getBlockZ() && z < max.getBlockZ() + 1;
     }
 
     @Override
@@ -139,8 +139,8 @@ public class ProtectedCuboidRegion extends ProtectedRegion {
     Area toArea() {
         int x = getMinimumPoint().getBlockX();
         int z = getMinimumPoint().getBlockZ();
-        int width = getMaximumPoint().getBlockX() - x;
-        int height = getMaximumPoint().getBlockZ() - z;
+        int width = getMaximumPoint().getBlockX() - x + 1;
+        int height = getMaximumPoint().getBlockZ() - z + 1;
         return new Area(new Rectangle(x, z, width, height));
     }
 
@@ -154,14 +154,37 @@ public class ProtectedCuboidRegion extends ProtectedRegion {
     }
 
     @Override
-    public int volume() {
-        int xLength = max.getBlockX() - min.getBlockX() + 1;
-        int yLength = max.getBlockY() - min.getBlockY() + 1;
-        int zLength = max.getBlockZ() - min.getBlockZ() + 1;
+    public Vector getLenght(){
+        return new Vector(
+                max.getBlockX() - min.getBlockX() + 1,
+                max.getBlockY() - min.getBlockY() + 1,
+                max.getBlockZ() - min.getBlockZ() + 1
+        );
+    }
+
+    @Override
+    public int area() {
+        Vector lenght = getLenght();
 
         try {
-            long v = MathUtils.checkedMultiply(xLength, yLength);
-            v = MathUtils.checkedMultiply(v, zLength);
+            long a = MathUtils.checkedMultiply(lenght.getBlockX(), lenght.getBlockZ());
+            if (a > Integer.MAX_VALUE) {
+                return Integer.MAX_VALUE;
+            } else {
+                return (int) a;
+            }
+        } catch (ArithmeticException e) {
+            return Integer.MAX_VALUE;
+        }
+    }
+
+    @Override
+    public int volume() {
+        Vector length = getLenght();
+
+        try {
+            long v = MathUtils.checkedMultiply(length.getBlockX(), length.getBlockZ());
+            v = MathUtils.checkedMultiply(v, length.getBlockY());
             if (v > Integer.MAX_VALUE) {
                 return Integer.MAX_VALUE;
             } else {

@@ -118,6 +118,7 @@ public class WorldConfiguration {
     public boolean blockOtherExplosions;
     public boolean blockEntityPaintingDestroy;
     public boolean blockEntityItemFrameDestroy;
+    public boolean blockEntityArmorStandDestroy;
     public boolean blockPluginSpawning;
     public boolean blockGroundSlimes;
     public boolean blockZombieDoorDestruction;
@@ -142,7 +143,7 @@ public class WorldConfiguration {
     // public boolean useiConomy;
     // public boolean buyOnClaim;
     // public double buyOnClaimPrice;
-    public int maxClaimVolume;
+    public int maxRegionClaimSizePerPlayer;
     public boolean claimOnlyInsideExistingRegions;
     public int maxRegionCountPerPlayer;
     public boolean boundedLocationFlags;
@@ -181,11 +182,18 @@ public class WorldConfiguration {
     public boolean disableDeathMessages;
     public boolean disableObsidianGenerators;
     public boolean strictEntitySpawn;
+    public boolean protectAreaInsteadVolume;
+    public boolean autoSetMaximumRegionProtectHeight;
+    public boolean useRegionMaximumLenght;
+    public int maxRegionSideLenghtPerPlayer;
+    public boolean permForRemoveLastOwner;
     public TargetMatcherSet allowAllInteract;
     public TargetMatcherSet blockUseAtFeet;
+    public boolean ignoreHopperMoveEvents;
 
     private Map<String, Integer> maxRegionCounts;
-
+    private Map<String, Integer> maxRegionClaimSizes;
+    private Map<String, Integer> maxRegionSideLenghtValues;
     /* Configuration data end */
 
     /**
@@ -327,6 +335,36 @@ public class WorldConfiguration {
         return res;
     }
 
+    private HashMap<String, Integer> getGroupProperty(String property, Integer defaultValue) {
+        HashMap<String, Integer> groupProperty = new HashMap<String, Integer>();
+        groupProperty.put(null, defaultValue);
+        for (String key : getKeys(property)) {
+            if (!key.equalsIgnoreCase("default")) {
+                Object val = getProperty(property + "." + key);
+                if (val != null && val instanceof Number) {
+                    groupProperty.put(key, ((Number) val).intValue());
+                }
+            }
+        }
+        return groupProperty;
+    }
+
+    private int getMaxValues(Player player, Map<String, Integer> values, Integer defaultValue){
+        int max = -1;
+        for (String group : plugin.getGroups(player)) {
+            if (values.containsKey(group)) {
+                int groupMax = values.get(group);
+                if (max < groupMax) {
+                    max = groupMax;
+                }
+            }
+        }
+        if (max <= -1) {
+            max = defaultValue;
+        }
+        return max;
+    }
+
     /**
      * Load the configuration.
      */
@@ -351,6 +389,7 @@ public class WorldConfiguration {
         strictEntitySpawn = getBoolean("event-handling.block-entity-spawns-with-untraceable-cause", false);
         allowAllInteract = getTargetMatchers("event-handling.interaction-whitelist");
         blockUseAtFeet = getTargetMatchers("event-handling.emit-block-use-at-feet");
+        ignoreHopperMoveEvents = getBoolean("event-handling.ignore-hopper-item-move-events", false);
 
         itemDurability = getBoolean("protection.item-durability", true);
         removeInfiniteStacks = getBoolean("protection.remove-infinite-stacks", false);
@@ -407,6 +446,7 @@ public class WorldConfiguration {
         disableSnowmanTrails = getBoolean("mobs.disable-snowman-trails", false);
         blockEntityPaintingDestroy = getBoolean("mobs.block-painting-destroy", false);
         blockEntityItemFrameDestroy = getBoolean("mobs.block-item-frame-destroy", false);
+        blockEntityArmorStandDestroy = getBoolean("mobs.block-armor-stand-destroy", false);
         blockPluginSpawning = getBoolean("mobs.block-plugin-spawning", true);
         blockGroundSlimes = getBoolean("mobs.block-above-ground-slimes", false);
         blockOtherExplosions = getBoolean("mobs.block-other-explosions", false);
@@ -461,22 +501,21 @@ public class WorldConfiguration {
         highFreqFlags = getBoolean("regions.high-frequency-flags", false);
         checkLiquidFlow = getBoolean("regions.protect-against-liquid-flow", false);
         regionWand = getInt("regions.wand", 334);
-        maxClaimVolume = getInt("regions.max-claim-volume", 30000);
         claimOnlyInsideExistingRegions = getBoolean("regions.claim-only-inside-existing-regions", false);
         boundedLocationFlags = getBoolean("regions.location-flags-only-inside-regions", false);
+        protectAreaInsteadVolume = getBoolean("regions.protect-area-instead-volume", true);
+        autoSetMaximumRegionProtectHeight = getBoolean("regions.auto-set-maximum-region-protect-height", false);
+        useRegionMaximumLenght = getBoolean("regions.use-maximum-region-lenght", false);
+        permForRemoveLastOwner = getBoolean("regions.perm-for-remove-last-owner", true);
 
-        maxRegionCountPerPlayer = getInt("regions.max-region-count-per-player.default", 7);
-        maxRegionCounts = new HashMap<String, Integer>();
-        maxRegionCounts.put(null, maxRegionCountPerPlayer);
+        maxRegionCountPerPlayer = getInt("regions.max-region-count-per-player.default", 3);
+        maxRegionCounts = getGroupProperty("regions.max-region-count-per-player", maxRegionCountPerPlayer);
 
-        for (String key : getKeys("regions.max-region-count-per-player")) {
-            if (!key.equalsIgnoreCase("default")) {
-                Object val = getProperty("regions.max-region-count-per-player." + key);
-                if (val != null && val instanceof Number) {
-                    maxRegionCounts.put(key, ((Number) val).intValue());
-                }
-            }
-        }
+        maxRegionClaimSizePerPlayer = getInt("regions.max-region-claim-size-per-player.default", 10000);
+        maxRegionClaimSizes = getGroupProperty("regions.max-region-claim-size-per-player", maxRegionCountPerPlayer);
+
+        maxRegionSideLenghtPerPlayer = getInt("regions.max-region-side-lenght-per-player.default", (int)Math.sqrt(maxRegionClaimSizePerPlayer));
+        maxRegionSideLenghtValues = getGroupProperty("regions.max-region-side-lenght-per-player", maxRegionSideLenghtPerPlayer);
 
         // useiConomy = getBoolean("iconomy.enable", false);
         // buyOnClaim = getBoolean("iconomy.buy-on-claim", false);
@@ -637,19 +676,16 @@ public class WorldConfiguration {
         return chestProtection;
     }
 
+
     public int getMaxRegionCount(Player player) {
-        int max = -1;
-        for (String group : plugin.getGroups(player)) {
-            if (maxRegionCounts.containsKey(group)) {
-                int groupMax = maxRegionCounts.get(group);
-                if (max < groupMax) {
-                    max = groupMax;
-                }
-            }
-        }
-        if (max <= -1) {
-            max = maxRegionCountPerPlayer;
-        }
-        return max;
+        return getMaxValues(player, maxRegionCounts, maxRegionCountPerPlayer);
+    }
+
+    public int getMaxClaimValues(Player player) {
+        return getMaxValues(player, maxRegionClaimSizes, maxRegionClaimSizePerPlayer);
+    }
+
+    public int getMaxRegionLenghtValues(Player player) {
+        return getMaxValues(player, maxRegionSideLenghtValues, maxRegionSideLenghtPerPlayer);
     }
 }
