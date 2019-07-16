@@ -72,7 +72,6 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -298,14 +297,14 @@ public final class RegionCommands extends RegionCommandsBase {
                 return;
             }
 
-            else if (wcfg.useRegionMaximumLenght && !permModel.mayIgnoreMaxLenghtRegion()){
-                Boolean overmaxX = region.getLenght().getBlockX() > wcfg.getMaxRegionLenghtValues(player);
-                Boolean overmaxZ = region.getLenght().getBlockZ() > wcfg.getMaxRegionLenghtValues(player);
+            else if (wcfg.useRegionMaximumSideLength && !permModel.mayIgnoreRegionMaximumSideLength()){
+                Boolean overmaxX = region.getLength().getBlockX() > wcfg.getMaxRegionLengthValues(player);
+                Boolean overmaxZ = region.getLength().getBlockZ() > wcfg.getMaxRegionLengthValues(player);
                 if (overmaxX || overmaxZ){
-                    player.sendMessage(ChatColor.RED + "This region coordinate lenght is too large to claim.");
-                    player.sendMessage(ChatColor.RED + "Max. area coordinate lenght: " + wcfg.getMaxRegionLenghtValues(player) + ", your area coordinate lenght: ");
-                    if (overmaxX) player.sendMessage(ChatColor.RED + "X: " + region.getLenght().getBlockX() + " is overmaxed.");
-                    if (overmaxZ) player.sendMessage(ChatColor.RED + "Z: " + region.getLenght().getBlockZ() + " is overmaxed.");
+                    player.sendMessage(ChatColor.RED + "This region side length is too large to claim.");
+                    player.sendMessage(ChatColor.RED + "Max. area side length: " + wcfg.getMaxRegionLengthValues(player) + ", your area side length: ");
+                    if (overmaxX) player.sendMessage(ChatColor.RED + "X: " + region.getLength().getBlockX() + " is overmaxed.");
+                    if (overmaxZ) player.sendMessage(ChatColor.RED + "Z: " + region.getLength().getBlockZ() + " is overmaxed.");
                     return;
                 }
             }

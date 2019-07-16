@@ -72,7 +72,7 @@ public class RegionPermissionModel extends AbstractPermissionModel {
     
     public boolean mayClaimRegionsUnbounded() { return hasPluginPermission("region.unlimited"); }
 
-    public boolean mayIgnoreMaxLenghtRegion() { return hasPluginPermission("region.unlimlenght"); }
+    public boolean mayIgnoreRegionMaximumSideLength() { return hasPluginPermission("region.unlimitedsidelength"); }
     
     public boolean mayDelete(ProtectedRegion region) {
         return hasPatternPermission("remove", region);
