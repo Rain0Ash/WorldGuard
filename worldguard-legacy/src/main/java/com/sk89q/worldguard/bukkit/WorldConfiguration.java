@@ -118,6 +118,7 @@ public class WorldConfiguration {
     public boolean blockOtherExplosions;
     public boolean blockEntityPaintingDestroy;
     public boolean blockEntityItemFrameDestroy;
+    public boolean blockEntityArmorStandDestroy;
     public boolean blockPluginSpawning;
     public boolean blockGroundSlimes;
     public boolean blockZombieDoorDestruction;
@@ -188,6 +189,7 @@ public class WorldConfiguration {
     public boolean permForRemoveLastOwner;
     public TargetMatcherSet allowAllInteract;
     public TargetMatcherSet blockUseAtFeet;
+    public boolean ignoreHopperMoveEvents;
 
     private Map<String, Integer> maxRegionCounts;
     private Map<String, Integer> maxRegionClaimSizes;
@@ -387,6 +389,7 @@ public class WorldConfiguration {
         strictEntitySpawn = getBoolean("event-handling.block-entity-spawns-with-untraceable-cause", false);
         allowAllInteract = getTargetMatchers("event-handling.interaction-whitelist");
         blockUseAtFeet = getTargetMatchers("event-handling.emit-block-use-at-feet");
+        ignoreHopperMoveEvents = getBoolean("event-handling.ignore-hopper-item-move-events", false);
 
         itemDurability = getBoolean("protection.item-durability", true);
         removeInfiniteStacks = getBoolean("protection.remove-infinite-stacks", false);
@@ -443,6 +446,7 @@ public class WorldConfiguration {
         disableSnowmanTrails = getBoolean("mobs.disable-snowman-trails", false);
         blockEntityPaintingDestroy = getBoolean("mobs.block-painting-destroy", false);
         blockEntityItemFrameDestroy = getBoolean("mobs.block-item-frame-destroy", false);
+        blockEntityArmorStandDestroy = getBoolean("mobs.block-armor-stand-destroy", false);
         blockPluginSpawning = getBoolean("mobs.block-plugin-spawning", true);
         blockGroundSlimes = getBoolean("mobs.block-above-ground-slimes", false);
         blockOtherExplosions = getBoolean("mobs.block-other-explosions", false);

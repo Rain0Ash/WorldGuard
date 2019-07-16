@@ -47,7 +47,7 @@ public class BukkitPlayer extends LocalPlayer {
         this.plugin = plugin;
         this.player = player;
         // getName() takes longer than before in newer versions of Minecraft
-        this.name = player.getName();
+        this.name = player == null ? null : player.getName();
         this.silenced = silenced;
     }
 
