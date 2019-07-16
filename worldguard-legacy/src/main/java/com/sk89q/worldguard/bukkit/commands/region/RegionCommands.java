@@ -213,7 +213,7 @@ public final class RegionCommands extends RegionCommandsBase {
         Player player = plugin.checkPlayer(sender);
         LocalPlayer localPlayer = plugin.wrapPlayer(player);
         RegionPermissionModel permModel = getPermissionModel(sender);
-        
+
         // Check permissions
         if (!permModel.mayClaim()) {
             throw new CommandPermissionsException();
@@ -227,7 +227,14 @@ public final class RegionCommands extends RegionCommandsBase {
 
         WorldConfiguration wcfg = plugin.getGlobalStateManager().get(player.getWorld());
 
+        if (wcfg.autoSetMaximumRegionProtectHeight){
+            if (expandVert(player)){
+                player.sendMessage(ChatColor.YELLOW + "Selection was been vertical expanded.");
+            }
+        }
+
         ProtectedRegion region = checkRegionFromSelection(player, id);
+        setPlayerSelection(player, region);
 
         // Check whether the player has created too many regions
         if (!permModel.mayClaimRegionsUnbounded()) {
@@ -282,7 +289,7 @@ public final class RegionCommands extends RegionCommandsBase {
                 return;
             }
 
-            else if (region.volume() > wcfg.getMaxClaimValues(player)) {
+            else if (!wcfg.protectAreaInsteadVolume && region.volume() > wcfg.getMaxClaimValues(player)) {
                 player.sendMessage(ChatColor.RED + "This region is too large to claim.");
                 player.sendMessage(ChatColor.RED +
                         "Max. volume: " + wcfg.getMaxClaimValues(player) + ", your volume: " + region.volume()+".");
@@ -290,20 +297,16 @@ public final class RegionCommands extends RegionCommandsBase {
             }
 
             else if (wcfg.useRegionMaximumLenght && !permModel.mayIgnoreMaxLenghtRegion()){
-                if (region.getLenght().getBlockX() > wcfg.getMaxRegionLenghtValues(player) ||
-                        region.getLenght().getBlockZ() > wcfg.getMaxRegionLenghtValues(player)){
-
-                    player.sendMessage(ChatColor.RED + "This region area lenght is too large to claim.");
-                    player.sendMessage(ChatColor.RED +
-                            "Max. area lenght: " + wcfg.getMaxRegionLenghtValues(player) + ", your area lenght: " +
-                                "X: " + region.getLenght().getBlockX()+ ", Z: " + region.getLenght().getBlockZ() + ".");
+                Boolean overmaxX = region.getLenght().getBlockX() > wcfg.getMaxRegionLenghtValues(player);
+                Boolean overmaxZ = region.getLenght().getBlockZ() > wcfg.getMaxRegionLenghtValues(player);
+                if (overmaxX || overmaxZ){
+                    player.sendMessage(ChatColor.RED + "This region coordinate lenght is too large to claim.");
+                    player.sendMessage(ChatColor.RED + "Max. area coordinate lenght: " + wcfg.getMaxRegionLenghtValues(player) + ", your area coordinate lenght: ");
+                    if (overmaxX) player.sendMessage(ChatColor.RED + "X: " + region.getLenght().getBlockX() + " is overmaxed.");
+                    if (overmaxZ) player.sendMessage(ChatColor.RED + "Z: " + region.getLenght().getBlockZ() + " is overmaxed.");
                     return;
                 }
             }
-        }
-
-        if (wcfg.autoSetMaximumRegionProtectHeight){
-            expandVert(player);
         }
 
         RegionAdder task = new RegionAdder(plugin, manager, region);

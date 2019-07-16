@@ -310,7 +310,6 @@ public final class Materials {
             MATERIAL_FLAGS.put(Material.END_BRICKS, 0);
             MATERIAL_FLAGS.put(Material.END_GATEWAY, 0);
             MATERIAL_FLAGS.put(Material.FROSTED_ICE, 0);
-            MATERIAL_FLAGS.put(Material.GRASS_PATH, 0);
             MATERIAL_FLAGS.put(Material.PURPUR_BLOCK, 0);
             MATERIAL_FLAGS.put(Material.PURPUR_STAIRS, 0);
             MATERIAL_FLAGS.put(Material.PURPUR_PILLAR, 0);
@@ -864,7 +863,8 @@ public final class Materials {
         return type == Material.DIODE_BLOCK_OFF
             || type == Material.DIODE_BLOCK_ON
             || type == Material.REDSTONE_COMPARATOR_OFF
-            || type == Material.REDSTONE_COMPARATOR_ON;
+            || type == Material.REDSTONE_COMPARATOR_ON
+            || type == Material.FLOWER_POT;
     }
 
     /**

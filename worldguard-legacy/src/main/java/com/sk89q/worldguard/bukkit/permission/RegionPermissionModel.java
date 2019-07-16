@@ -70,9 +70,7 @@ public class RegionPermissionModel extends AbstractPermissionModel {
         return hasPluginPermission("region.claim");
     }
     
-    public boolean mayClaimRegionsUnbounded() {
-        return hasPluginPermission("region.unlimited");
-    }
+    public boolean mayClaimRegionsUnbounded() { return hasPluginPermission("region.unlimited"); }
 
     public boolean mayIgnoreMaxLenghtRegion() { return hasPluginPermission("region.unlimlenght"); }
     

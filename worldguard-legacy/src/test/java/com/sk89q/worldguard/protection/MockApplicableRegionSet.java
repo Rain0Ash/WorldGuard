@@ -44,8 +44,7 @@ public class MockApplicableRegionSet {
 
     public LocalPlayer createPlayer() {
         playerIndex++;
-        LocalPlayer player = new TestPlayer("#PLAYER_" + playerIndex);
-        return player;
+        return new TestPlayer("#PLAYER_" + playerIndex);
     }
 
     public ProtectedRegion global() {

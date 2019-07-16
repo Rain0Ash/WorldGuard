@@ -405,7 +405,8 @@ class RegionCommandsBase {
         return JavaPlugin.getPlugin(WorldEditPlugin.class);
     }
 
-    public static boolean expandVert(Player player) {
+    public static boolean expandVert(Player player) throws CommandException{
+
         LocalSession session = getWorldEditPlugin().getSession(player);
 
         checkNotNull(player.getWorld());
@@ -419,6 +420,7 @@ class RegionCommandsBase {
             session.getRegionSelector(worldEditWorld).learnChanges();
             return true;
         } catch (Throwable e) {
+            player.sendMessage(e.toString());
         }
         return false;
     }

@@ -142,7 +142,7 @@ public class WorldConfiguration {
     // public boolean useiConomy;
     // public boolean buyOnClaim;
     // public double buyOnClaimPrice;
-    public int maxClaimValuePerPlayer;
+    public int maxRegionClaimSizePerPlayer;
     public boolean claimOnlyInsideExistingRegions;
     public int maxRegionCountPerPlayer;
     public boolean boundedLocationFlags;
@@ -184,14 +184,14 @@ public class WorldConfiguration {
     public boolean protectAreaInsteadVolume;
     public boolean autoSetMaximumRegionProtectHeight;
     public boolean useRegionMaximumLenght;
-    public int maxRegionLenghtValuePerPlayer;
+    public int maxRegionSideLenghtPerPlayer;
     public boolean permForRemoveLastOwner;
     public TargetMatcherSet allowAllInteract;
     public TargetMatcherSet blockUseAtFeet;
 
     private Map<String, Integer> maxRegionCounts;
-    private Map<String, Integer> maxClaimValues;
-    private Map<String, Integer> maxRegionLenghtValues;
+    private Map<String, Integer> maxRegionClaimSizes;
+    private Map<String, Integer> maxRegionSideLenghtValues;
     /* Configuration data end */
 
     /**
@@ -499,7 +499,7 @@ public class WorldConfiguration {
         regionWand = getInt("regions.wand", 334);
         claimOnlyInsideExistingRegions = getBoolean("regions.claim-only-inside-existing-regions", false);
         boundedLocationFlags = getBoolean("regions.location-flags-only-inside-regions", false);
-        protectAreaInsteadVolume = getBoolean("regions.ignore-height-in-region-volume", true);
+        protectAreaInsteadVolume = getBoolean("regions.protect-area-instead-volume", true);
         autoSetMaximumRegionProtectHeight = getBoolean("regions.auto-set-maximum-region-protect-height", false);
         useRegionMaximumLenght = getBoolean("regions.use-maximum-region-lenght", false);
         permForRemoveLastOwner = getBoolean("regions.perm-for-remove-last-owner", true);
@@ -507,11 +507,11 @@ public class WorldConfiguration {
         maxRegionCountPerPlayer = getInt("regions.max-region-count-per-player.default", 3);
         maxRegionCounts = getGroupProperty("regions.max-region-count-per-player", maxRegionCountPerPlayer);
 
-        maxClaimValuePerPlayer = getInt("regions.max-claim-volume-per-player.default", 10000);
-        maxClaimValues = getGroupProperty("regions.max-claim-volume-per-player", maxRegionCountPerPlayer);
+        maxRegionClaimSizePerPlayer = getInt("regions.max-region-claim-size-per-player.default", 10000);
+        maxRegionClaimSizes = getGroupProperty("regions.max-region-claim-size-per-player", maxRegionCountPerPlayer);
 
-        maxRegionLenghtValuePerPlayer = getInt("regions.max-region-lenght-per-player.default", 100);
-        maxRegionLenghtValues = getGroupProperty("regions.max-region-lenght-per-player", maxRegionLenghtValuePerPlayer);
+        maxRegionSideLenghtPerPlayer = getInt("regions.max-region-side-lenght-per-player.default", (int)Math.sqrt(maxRegionClaimSizePerPlayer));
+        maxRegionSideLenghtValues = getGroupProperty("regions.max-region-side-lenght-per-player", maxRegionSideLenghtPerPlayer);
 
         // useiConomy = getBoolean("iconomy.enable", false);
         // buyOnClaim = getBoolean("iconomy.buy-on-claim", false);
@@ -678,10 +678,10 @@ public class WorldConfiguration {
     }
 
     public int getMaxClaimValues(Player player) {
-        return getMaxValues(player, maxClaimValues, maxClaimValuePerPlayer);
+        return getMaxValues(player, maxRegionClaimSizes, maxRegionClaimSizePerPlayer);
     }
 
     public int getMaxRegionLenghtValues(Player player) {
-        return getMaxValues(player, maxRegionLenghtValues, maxRegionLenghtValuePerPlayer);
+        return getMaxValues(player, maxRegionSideLenghtValues, maxRegionSideLenghtPerPlayer);
     }
 }
