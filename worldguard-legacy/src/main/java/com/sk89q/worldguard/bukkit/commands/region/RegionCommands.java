@@ -70,9 +70,8 @@ import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.lang.reflect.Array;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -235,7 +234,7 @@ public final class RegionCommands extends RegionCommandsBase {
         }
 
         ProtectedRegion region = checkRegionFromSelection(player, id);
-        setPlayerSelection(player, region);
+        setPlayerSelection(player, region, false);
 
         // Check whether the player has created too many regions
         if (!permModel.mayClaimRegionsUnbounded()) {
@@ -263,7 +262,14 @@ public final class RegionCommands extends RegionCommandsBase {
         // Check if this region overlaps any other region
         if (regions.size() > 0) {
             if (!regions.isOwnerOfAll(localPlayer)) {
-                throw new CommandException("This region overlaps with someone else's region.");
+                Iterator<ProtectedRegion> regionsSet = regions.getRegions().iterator();
+                String overlapsedRegion = "";
+                while (regionsSet.hasNext()) {
+                    ProtectedRegion reg = regionsSet.next();
+                    if (!reg.isOwner(localPlayer))
+                        overlapsedRegion += "[" + reg.getId() + "]" + (regionsSet.hasNext() ? ", " : ".");
+                }
+                throw new CommandException("This region overlaps by foreign regions: " + overlapsedRegion);
             }
         } else {
             if (wcfg.claimOnlyInsideExistingRegions) {
@@ -274,7 +280,7 @@ public final class RegionCommands extends RegionCommandsBase {
 
         if (wcfg.getMaxClaimValues(player) >= Integer.MAX_VALUE) {
             throw new CommandException("The maximum claim volume get in the configuration is higher than is supported. " +
-                    "Currently, it must be " + Integer.MAX_VALUE+ " or smaller. Please contact a server administrator.");
+                    "Currently, it must be " + Integer.MAX_VALUE + " or smaller. Please contact a server administrator.");
         }
 
         // Check claim volume

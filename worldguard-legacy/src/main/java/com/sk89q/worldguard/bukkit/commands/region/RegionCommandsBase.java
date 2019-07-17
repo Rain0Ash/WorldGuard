@@ -354,7 +354,7 @@ class RegionCommandsBase {
      * @param region the region
      * @throws CommandException thrown on a command error
      */
-    protected static void setPlayerSelection(Player player, ProtectedRegion region) throws CommandException {
+    protected static void setPlayerSelection(Player player, ProtectedRegion region, Boolean message) throws CommandException {
         WorldEditPlugin worldEdit = WorldGuardPlugin.inst().getWorldEdit();
 
         World world = player.getWorld();
@@ -366,7 +366,9 @@ class RegionCommandsBase {
             Vector pt2 = cuboid.getMaximumPoint();
             CuboidSelection selection = new CuboidSelection(world, pt1, pt2);
             worldEdit.setSelection(player, selection);
-            player.sendMessage(ChatColor.YELLOW + "Region selected as a cuboid.");
+            if (message) {
+                player.sendMessage(ChatColor.YELLOW + "Region selected as a cuboid.");
+            }
 
         } else if (region instanceof ProtectedPolygonalRegion) {
             ProtectedPolygonalRegion poly2d = (ProtectedPolygonalRegion) region;
@@ -375,7 +377,9 @@ class RegionCommandsBase {
                     poly2d.getMinimumPoint().getBlockY(),
                     poly2d.getMaximumPoint().getBlockY() );
             worldEdit.setSelection(player, selection);
-            player.sendMessage(ChatColor.YELLOW + "Region selected as a polygon.");
+            if (message) {
+                player.sendMessage(ChatColor.YELLOW + "Region selected as a polygon.");
+            }
 
         } else if (region instanceof GlobalProtectedRegion) {
             throw new CommandException(
@@ -386,6 +390,10 @@ class RegionCommandsBase {
             throw new CommandException("Unknown region type: " +
                     region.getClass().getCanonicalName());
         }
+    }
+
+    protected static void setPlayerSelection(Player player, ProtectedRegion region) throws CommandException {
+        setPlayerSelection(player, region, true);
     }
 
     /**
