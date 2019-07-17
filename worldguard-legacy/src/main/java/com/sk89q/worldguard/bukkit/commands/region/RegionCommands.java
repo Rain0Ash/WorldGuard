@@ -70,7 +70,6 @@ import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -262,14 +261,24 @@ public final class RegionCommands extends RegionCommandsBase {
         // Check if this region overlaps any other region
         if (regions.size() > 0) {
             if (!regions.isOwnerOfAll(localPlayer)) {
-                Iterator<ProtectedRegion> regionsSet = regions.getRegions().iterator();
+                ArrayList<ProtectedRegion> regionsList = new ArrayList<>(regions.getRegions());
+
+                //sorting by ID
+                Collections.sort(regionsList, new Comparator<ProtectedRegion>() {
+                    public int compare(ProtectedRegion one, ProtectedRegion other) {
+                        return one.getId().compareTo(other.getId());
+                    }
+                });
+
+                Iterator<ProtectedRegion> regionsIter = regionsList.iterator();
                 String overlapsedRegion = "";
-                while (regionsSet.hasNext()) {
-                    ProtectedRegion reg = regionsSet.next();
+
+                while (regionsIter.hasNext()) {
+                    ProtectedRegion reg = regionsIter.next();
                     if (!reg.isOwner(localPlayer))
-                        overlapsedRegion += "[" + reg.getId() + "]" + (regionsSet.hasNext() ? ", " : ".");
+                        overlapsedRegion += "[" + reg.getId() + "]" + (regionsIter.hasNext() ? ", " : ".");
                 }
-                throw new CommandException("This region overlaps by foreign regions: " + overlapsedRegion);
+                throw new CommandException("This region overlaps foreign regions: " + overlapsedRegion);
             }
         } else {
             if (wcfg.claimOnlyInsideExistingRegions) {
