@@ -224,7 +224,9 @@ public class RegionLister implements Callable<Integer> {
 
         @Override
         public String toString() {
-            if (isOwner) {
+            if (isOwner && isMember) {
+                return (index + 1) + ". [*] " + id;
+            } else if (isOwner) {
                 return (index + 1) + ". [+] " + id;
             } else if (isMember) {
                 return (index + 1) + ". [-] " + id;

@@ -318,7 +318,7 @@ public class MemberCommands extends RegionCommandsBase {
     public void removeOwner(CommandContext args, CommandSender sender) throws CommandException {
         warnAboutSaveFailures(sender);
 
-        Player player = null;
+        Player player;
         UUID playerUUID = null;
         if (sender instanceof Player) {
             player = (Player) sender;
@@ -350,8 +350,13 @@ public class MemberCommands extends RegionCommandsBase {
         while (argPlayerNameIter.hasNext()) {
             String argPlayerName = argPlayerNameIter.next();
 
-            UUID argPlayerUUID = DomainInputResolver.parseUUID(argPlayerName);
+<<<<<<< Updated upstream
+            UUID argPlayerUUID = Bukkit.getOfflinePlayer(argPlayerName).getUniqueId();
 
+=======
+            UUID argPlayerUUID = DomainInputResolver.parseUUID(argPlayerName);
+            
+>>>>>>> Stashed changes
             if (ownersAsUUID.contains(argPlayerUUID)) {
                 ownerPlayersUUID.add(argPlayerUUID);
                 ownerPlayersString.append(ownerPlayersString.length() > 0 ? ", " : "").append("[").append(argPlayerName).append("]");
