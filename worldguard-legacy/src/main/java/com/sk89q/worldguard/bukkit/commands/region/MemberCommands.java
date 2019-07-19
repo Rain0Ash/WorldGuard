@@ -55,11 +55,11 @@ public class MemberCommands extends RegionCommandsBase {
 
     private class PlayersName {
 
-        protected ArrayList<String> getPlayersNameList(CommandContext args){
+        private ArrayList<String> getPlayersNameList(CommandContext args){
             return new ArrayList<>(new LinkedHashSet<>(Arrays.asList(args.getParsedPaddedSlice(1, 0))));
         }
 
-        protected ArrayList<String> getPlayersNameList(CommandContext args, Boolean sorted){
+        private ArrayList<String> getPlayersNameList(CommandContext args, Boolean sorted){
             ArrayList<String> argPlayerNameList = getPlayersNameList(args);
             if (sorted) {
                 Collections.sort(argPlayerNameList, new Comparator<String>() {
@@ -72,12 +72,25 @@ public class MemberCommands extends RegionCommandsBase {
             return argPlayerNameList;
         }
 
-        protected Iterator<String> getPlayersNameIter(CommandContext args){
+        private Iterator<String> getPlayersNameIter(CommandContext args){
             return getPlayersNameList(args).iterator();
         }
 
-        protected Iterator<String> getPlayersNameIter(CommandContext args, Boolean sorted){
+        private Iterator<String> getPlayersNameIter(CommandContext args, Boolean sorted){
             return getPlayersNameList(args, sorted).iterator();
+        }
+
+        private String playerNameFromUUID(UUID playerUUID) {
+            return Bukkit.getOfflinePlayer(playerUUID).getName();
+        }
+
+        private ArrayList<String> playerNamesFromUUIDs(ArrayList<UUID> playersUUID) {
+            ArrayList<String> playerNames = new ArrayList<>();
+            for (UUID uuid : playersUUID){
+                String playerName = playerNameFromUUID(uuid);
+                if (playerName != null) playerNames.add(playerName);
+            }
+            return playerNames;
         }
     }
 
@@ -282,31 +295,63 @@ public class MemberCommands extends RegionCommandsBase {
 
         ListenableFuture<?> future;
 
-        if (args.hasFlag('a')) {
-            region.getMembers().removeAll();
+        ArrayList<UUID> membersAsUUID = region.getMembersAsUUID();
 
-            future = Futures.immediateFuture(null);
-        } else {
-            if (args.argsLength() < 2) {
-                throw new CommandException("List some names to remove, or use -a to remove all.");
+        Iterator<String> argPlayerNameIter = new PlayersName().getPlayersNameIter(args);
+
+        ArrayList<UUID> memberPlayersUUID = new ArrayList<>();
+        StringBuilder memberPlayersString = new StringBuilder();
+        StringBuilder notMemberPlayersString = new StringBuilder();
+        while (argPlayerNameIter.hasNext()) {
+            String argPlayerName = argPlayerNameIter.next();
+
+            UUID argPlayerUUID = Bukkit.getOfflinePlayer(argPlayerName).getUniqueId();
+
+            if (membersAsUUID.contains(argPlayerUUID)) {
+                memberPlayersUUID.add(argPlayerUUID);
+                memberPlayersString.append(memberPlayersString.length() > 0 ? ", " : "").append("[").append(argPlayerName).append("]");
+            } else {
+                notMemberPlayersString.append(notMemberPlayersString.length() > 0 ? ", " : "").append("[").append(argPlayerName).append("]");
             }
-
-            // Resolve members asynchronously
-            DomainInputResolver resolver = new DomainInputResolver(
-                    plugin.getProfileService(), args.getParsedPaddedSlice(1, 0));
-            resolver.setLocatorPolicy(args.hasFlag('n') ? UserLocatorPolicy.NAME_ONLY : UserLocatorPolicy.UUID_AND_NAME);
-
-            // Then remove it from the members
-            future = Futures.transform(
-                    plugin.getExecutorService().submit(resolver),
-                    resolver.createRemoveAllFunction(region.getMembers()));
         }
+
+        if (memberPlayersString.length() > 0) {
+            memberPlayersString.insert(0, "Region '%s' members: ").append(" successfully removed.");
+        } else {
+            memberPlayersString = new StringBuilder("Region '%s' members not changed.");
+        }
+
+        if (args.hasFlag('a')) {
+            if (membersAsUUID.size() > 0) {
+                memberPlayersUUID.clear();
+                memberPlayersUUID.addAll(membersAsUUID);
+                memberPlayersString = new StringBuilder("All region members successfully removed.");
+            } else {
+                memberPlayersString = new StringBuilder("The region has no owners.");
+            }
+        } else if (args.argsLength() < 2) {
+            throw new CommandException("List some names to remove, or use -a to remove all.");
+        }
+
+        ArrayList<String> memberPlayers = new PlayersName().playerNamesFromUUIDs(memberPlayersUUID);
+
+        // Resolve members asynchronously
+        DomainInputResolver resolver = new DomainInputResolver(
+                plugin.getProfileService(), memberPlayers.toArray(new String[0]));
+        resolver.setLocatorPolicy(args.hasFlag('n') ? UserLocatorPolicy.NAME_ONLY : UserLocatorPolicy.UUID_AND_NAME);
+
+        // Then remove it from the members
+        future = Futures.transform(
+                plugin.getExecutorService().submit(resolver),
+                resolver.createRemoveAllFunction(region.getMembers()));
 
         AsyncCommandHelper.wrap(future, plugin, sender)
                 .formatUsing(region.getId(), world.getName())
                 .registerWithSupervisor("Removing members from the region '%s' on '%s'")
                 .sendMessageAfterDelay("(Please wait... querying player names...)")
-                .thenRespondWith("Region '%s' updated with members removed.", "Failed to remove members");
+                .thenRespondWith(memberPlayersString.toString() +
+                        (notMemberPlayersString.length() > 0 ? ChatColor.RED + "\n" + "Players: " + notMemberPlayersString + " are not owners of the region '" + id + "'." + ChatColor.RESET : ""),
+                        "Failed to remove members");
     }
 
     @Command(aliases = {"removeowner", "remowner", "ro"},
@@ -402,11 +447,7 @@ public class MemberCommands extends RegionCommandsBase {
             }
         }
 
-        ArrayList<String> ownerPlayers = new ArrayList<>();
-        for (UUID uuid : ownerPlayersUUID){
-            String playerName = Bukkit.getOfflinePlayer(uuid).getName();
-            if (playerName != null) ownerPlayers.add(playerName);
-        }
+        ArrayList<String> ownerPlayers = new PlayersName().playerNamesFromUUIDs(ownerPlayersUUID);
 
         // Resolve owners asynchronously
         DomainInputResolver resolver = new DomainInputResolver(

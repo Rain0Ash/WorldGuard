@@ -20,6 +20,7 @@
 package com.sk89q.worldguard.bukkit.listener;
 
 import com.google.common.collect.Lists;
+import com.sk89q.worldguard.bukkit.ConfigurationManager;
 import com.sk89q.worldguard.bukkit.WorldConfiguration;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.bukkit.cause.Cause;
@@ -91,7 +92,7 @@ public class EventAbstractionListener extends AbstractListener {
     private final InventoryMoveItemEventDebounce moveItemDebounce = new InventoryMoveItemEventDebounce(30000);
     private final EventDebounce<BlockPistonRetractKey> pistonRetractDebounce = EventDebounce.create(5000);
     private final EventDebounce<BlockPistonExtendKey> pistonExtendDebounce = EventDebounce.create(5000);
-
+    Boolean useDenyEffect = new ConfigurationManager(new WorldGuardPlugin()).useDenyEffect;
     /**
      * Construct the listener.
      *
@@ -157,7 +158,7 @@ public class EventAbstractionListener extends AbstractListener {
             Events.fireToCancel(event, new PlaceBlockEvent(event, create(event.getPlayer()), event.getBlock()));
         }
 
-        if (event.isCancelled()) {
+        if (useDenyEffect && event.isCancelled()) {
             playDenyEffect(event.getPlayer(), event.getBlockPlaced().getLocation().add(0.5, 0.5, 0.5));
         }
     }
@@ -297,7 +298,7 @@ public class EventAbstractionListener extends AbstractListener {
 
                 entry.setCancelled(event.isCancelled());
 
-                if (event.isCancelled()) {
+                if (useDenyEffect && event.isCancelled()) {
                     playDenyEffect(piston.getLocation().add(0.5, 1, 0.5));
                 }
             }
@@ -320,7 +321,7 @@ public class EventAbstractionListener extends AbstractListener {
             }
             entry.setCancelled(event.isCancelled());
 
-            if (event.isCancelled()) {
+            if (useDenyEffect && event.isCancelled()) {
                 playDenyEffect(event.getBlock().getLocation().add(0.5, 1, 0.5));
             }
         }
@@ -394,7 +395,7 @@ public class EventAbstractionListener extends AbstractListener {
                     }
                 }
 
-                if (event.isCancelled()) {
+                if (useDenyEffect && event.isCancelled()) {
                     playDenyEffect(event.getPlayer(), clicked.getLocation().add(0.5, 1, 0.5));
                 }
 
@@ -457,7 +458,7 @@ public class EventAbstractionListener extends AbstractListener {
     public void onSignChange(SignChangeEvent event) {
         Events.fireToCancel(event, new UseBlockEvent(event, create(event.getPlayer()), event.getBlock()));
 
-        if (event.isCancelled()) {
+        if (useDenyEffect && event.isCancelled()) {
             playDenyEffect(event.getPlayer(), event.getBlock().getLocation().add(0.5, 0.5, 0.5));
         }
     }
@@ -483,7 +484,7 @@ public class EventAbstractionListener extends AbstractListener {
         Events.fireToCancel(event, new PlaceBlockEvent(event, create(player), blockAffected.getLocation(), blockMaterial).setAllowed(allowed));
         Events.fireToCancel(event, new UseItemEvent(event, create(player), player.getWorld(), item).setAllowed(allowed));
 
-        if (event.isCancelled()) {
+        if (useDenyEffect && event.isCancelled()) {
             playDenyEffect(event.getPlayer(), blockAffected.getLocation().add(0.5, 0.5, 0.5));
         }
     }
@@ -503,7 +504,7 @@ public class EventAbstractionListener extends AbstractListener {
         Events.fireToCancel(event, new BreakBlockEvent(event, create(player), blockAffected).setAllowed(allowed));
         Events.fireToCancel(event, new UseItemEvent(event, create(player), player.getWorld(), item).setAllowed(allowed));
 
-        if (event.isCancelled()) {
+        if (useDenyEffect && event.isCancelled()) {
             playDenyEffect(event.getPlayer(), blockAffected.getLocation().add(0.5, 0.5, 0.5));
         }
     }
@@ -596,7 +597,9 @@ public class EventAbstractionListener extends AbstractListener {
 
         if (event.isCancelled()) {
             Block effectBlock = event.getBlock().getRelative(event.getBlockFace());
-            playDenyEffect(event.getPlayer(), effectBlock.getLocation().add(0.5, 0.5, 0.5));
+            if (useDenyEffect) {
+                playDenyEffect(event.getPlayer(), effectBlock.getLocation().add(0.5, 0.5, 0.5));
+            }
         }
     }
 
@@ -606,7 +609,7 @@ public class EventAbstractionListener extends AbstractListener {
             Entity remover = ((HangingBreakByEntityEvent) event).getRemover();
             Events.fireToCancel(event, new DestroyEntityEvent(event, create(remover), event.getEntity()));
 
-            if (event.isCancelled() && remover instanceof Player) {
+            if (useDenyEffect && event.isCancelled() && remover instanceof Player) {
                 playDenyEffect((Player) remover, event.getEntity().getLocation());
             }
         }
