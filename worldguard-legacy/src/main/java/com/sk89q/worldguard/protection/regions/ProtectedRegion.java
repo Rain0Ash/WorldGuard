@@ -28,13 +28,13 @@ import com.sk89q.worldguard.domains.DefaultDomain;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.util.ChangeTracked;
 import com.sk89q.worldguard.util.Normal;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 
 import javax.annotation.Nullable;
 import java.awt.geom.Area;
 import java.awt.geom.Line2D;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
@@ -219,12 +219,40 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
         this.parent = null;
     }
 
+    private Player getPlayer(UUID uuid) {
+        Player player = Bukkit.getPlayer(uuid);
+        if (player == null) Bukkit.getOfflinePlayer(uuid);
+        return player;
+    }
+
     /**
      * Get the domain that contains the owners of this region.
      *
      * @return the domain
      */
     public DefaultDomain getOwners() {
+        return owners;
+    }
+
+    public ArrayList<Player> getOwnersAsPlayer() {
+        ArrayList<Player> owners = new ArrayList<>();
+        for (UUID uuid : getOwners().getUniqueIds()) {
+            Player uuidPlayer = getPlayer(uuid);
+            if (uuidPlayer != null) owners.add(uuidPlayer);
+        }
+        return owners;
+    }
+
+    public ArrayList<UUID> getOwnersAsUUID() {
+        return new  ArrayList<>(getOwners().getUniqueIds());
+    }
+
+    public ArrayList<String> getOwnersAsName() {
+        ArrayList<String> owners = new ArrayList<>();
+        for (UUID uuid : getOwners().getUniqueIds()) {
+            Player uuidPlayer = getPlayer(uuid);
+            if (uuidPlayer != null) owners.add(uuidPlayer.getName());
+        }
         return owners;
     }
 
@@ -254,6 +282,29 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
      *
      * @param members the new domain
      */
+
+    public ArrayList<Player> getMembersAsPlayer() {
+        ArrayList<Player> members = new ArrayList<>();
+        for (UUID uuid : getMembers().getUniqueIds()) {
+            Player uuidPlayer = getPlayer(uuid);
+            if (uuidPlayer != null) members.add(uuidPlayer);
+        }
+        return members;
+    }
+
+    public ArrayList<UUID> getMembersAsUUID() {
+        return new  ArrayList<>(getMembers().getUniqueIds());
+    }
+
+    public ArrayList<String> getMembersAsName() {
+        ArrayList<String> members = new ArrayList<>();
+        for (UUID uuid : getMembers().getUniqueIds()) {
+            Player uuidPlayer = getPlayer(uuid);
+            if (uuidPlayer != null) members.add(uuidPlayer.getName());
+        }
+        return members;
+    }
+
     public void setMembers(DefaultDomain members) {
         checkNotNull(members);
         setDirty(true);
@@ -267,6 +318,13 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
      */
     public boolean hasMembersOrOwners() {
         return owners.size() > 0 || members.size() > 0;
+    }
+
+    public boolean hasOwners() {
+        return owners.size() > 0;
+    }
+    public boolean hasMembers() {
+        return members.size() > 0;
     }
 
     /**

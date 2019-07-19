@@ -265,20 +265,19 @@ public final class RegionCommands extends RegionCommandsBase {
 
                 //sorting by ID
                 Collections.sort(regionsList, new Comparator<ProtectedRegion>() {
-                    public int compare(ProtectedRegion one, ProtectedRegion other) {
-                        return one.getId().compareTo(other.getId());
+                    public int compare(ProtectedRegion firstRegion, ProtectedRegion secondRegion) {
+                        return firstRegion.getId().compareTo(secondRegion.getId());
                     }
                 });
 
                 Iterator<ProtectedRegion> regionsIter = regionsList.iterator();
-                String overlapsedRegion = "";
-
+                StringBuilder overlapsedRegion = new StringBuilder();
                 while (regionsIter.hasNext()) {
                     ProtectedRegion reg = regionsIter.next();
                     if (!reg.isOwner(localPlayer))
-                        overlapsedRegion += "[" + reg.getId() + "]" + (regionsIter.hasNext() ? ", " : ".");
+                        overlapsedRegion.append("[").append(reg.getId()).append("]").append(regionsIter.hasNext() ? ", " : ".");
                 }
-                throw new CommandException("This region overlaps foreign regions: " + overlapsedRegion);
+                throw new CommandException("This region overlaps foreign regions: " + overlapsedRegion.toString());
             }
         } else {
             if (wcfg.claimOnlyInsideExistingRegions) {
@@ -338,6 +337,8 @@ public final class RegionCommands extends RegionCommandsBase {
                         "A new region has been claimed named '%s'.",
                         "Failed to claim the region '%s'");
     }
+
+
 
     /**
      * Get a WorldEdit selection from a region.
