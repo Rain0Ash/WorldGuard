@@ -72,8 +72,12 @@ public class RegionPermissionModel extends AbstractPermissionModel {
     
     public boolean mayClaimRegionsUnbounded() { return hasPluginPermission("region.unlimited"); }
 
-    public boolean mayIgnoreRegionMaximumSideLength() { return hasPluginPermission("region.unlimitedsidelength"); }
-    
+    public boolean maySeizeRegion() { return hasPluginPermission("region.seize"); }
+
+    public boolean maySelectRegionWithoutOwners() { return hasPluginPermission("region.seize.select"); }
+
+    public boolean mayIgnoreRegionMaximumSideLength() { return hasPluginPermission("region.unlimited.side"); }
+
     public boolean mayDelete(ProtectedRegion region) {
         return hasPatternPermission("remove", region);
     }
@@ -91,7 +95,7 @@ public class RegionPermissionModel extends AbstractPermissionModel {
     public boolean maySelect(ProtectedRegion region) {
         return hasPatternPermission("select", region);
     }
-    
+
     public boolean mayLookup(ProtectedRegion region) {
         return hasPatternPermission("info", region);
     }
@@ -147,13 +151,17 @@ public class RegionPermissionModel extends AbstractPermissionModel {
                 "flag.flags." + flag.getName().toLowerCase() + "." + sanitizedValue, region);
     }
 
-    public boolean mayAddMembers(ProtectedRegion region) {
-        return hasPatternPermission("addmember", region);
-    }
+    public boolean mayAddMembers(ProtectedRegion region) { return hasPatternPermission("addmember", region); }
+
+    public boolean mayAddOfflineMembers(ProtectedRegion region) { return hasPatternPermission("addofflinemember", region); }
 
     public boolean mayAddOwners(ProtectedRegion region) {
         return hasPatternPermission("addowner", region);
     }
+
+    public boolean mayAddOfflineOwners(ProtectedRegion region) { return hasPatternPermission("addofflineowners", region); }
+
+    public boolean mayAddToOwnerAbovePlayerLimit(ProtectedRegion region) { return hasPatternPermission("addownerabovelimit", region); }
 
     public boolean mayRemoveMembers(ProtectedRegion region) {
         return hasPatternPermission("removemember", region);
