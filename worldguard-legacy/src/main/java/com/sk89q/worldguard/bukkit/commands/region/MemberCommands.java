@@ -39,6 +39,7 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -318,9 +319,10 @@ public class MemberCommands extends RegionCommandsBase {
         warnAboutSaveFailures(sender);
 
         Player player = null;
-        LocalPlayer localPlayer = null;
+        UUID playerUUID = null;
         if (sender instanceof Player) {
             player = (Player) sender;
+            playerUUID = player.getUniqueId();
         }
 
         World world = checkWorld(args, sender, 'w'); // Get the world
@@ -338,20 +340,20 @@ public class MemberCommands extends RegionCommandsBase {
 
         ListenableFuture<?> future;
 
-        ArrayList<Player> ownersAsPlayers = region.getOwnersAsPlayer();
         ArrayList<UUID> ownersAsUUID = region.getOwnersAsUUID();
-        ArrayList<String> ownersAsNames = region.getOwnersAsName();
 
         Iterator<String> argPlayerNameIter = new PlayersName().getPlayersNameIter(args);
 
-        ArrayList<String> ownerPlayers = new ArrayList<>();
+        ArrayList<UUID> ownerPlayersUUID = new ArrayList<>();
         StringBuilder ownerPlayersString = new StringBuilder();
         StringBuilder notOwnerPlayersString = new StringBuilder();
         while (argPlayerNameIter.hasNext()) {
-            
             String argPlayerName = argPlayerNameIter.next();
-            if (ownersAsUUID.contains(Bukkit.getOfflinePlayer(argPlayerName).getUniqueId())) {
-                ownerPlayers.add(argPlayerName);
+
+            UUID argPlayerUUID = DomainInputResolver.parseUUID(argPlayerName);
+
+            if (ownersAsUUID.contains(argPlayerUUID)) {
+                ownerPlayersUUID.add(argPlayerUUID);
                 ownerPlayersString.append(ownerPlayersString.length() > 0 ? ", " : "").append("[").append(argPlayerName).append("]");
             } else {
                 notOwnerPlayersString.append(notOwnerPlayersString.length() > 0 ? ", " : "").append("[").append(argPlayerName).append("]");
@@ -365,15 +367,16 @@ public class MemberCommands extends RegionCommandsBase {
         }
 
         if (args.hasFlag('c') ||
-                (ownersAsNames.size() > 0 &&
-                    ownerPlayers.containsAll(ownersAsNames)) &&
+                (ownersAsUUID.size() > 0 &&
+                    ownerPlayersUUID.containsAll(ownersAsUUID)) &&
                     (!wcfg.permForRemoveLastOwner || permModel.mayRemoveLastOwner(region))) {
             if (sender != null && wcfg.permForRemoveLastOwner && !permModel.mayRemoveLastOwner(region)) {
                 throw new CommandPermissionsException();
             }
-            if (ownersAsNames.size() > 0) {
-                ownerPlayers.clear();
-                ownerPlayers.addAll(ownersAsNames);
+
+            if (ownersAsUUID.size() > 0) {
+                ownerPlayersUUID.clear();
+                ownerPlayersUUID.addAll(ownersAsUUID);
                 ownerPlayersString = new StringBuilder("All region owners successfully removed.");
             } else {
                 ownerPlayersString = new StringBuilder("The region has no owners.");
@@ -381,24 +384,29 @@ public class MemberCommands extends RegionCommandsBase {
 
         } else {
             if (args.hasFlag('a') ||
-                    (ownerPlayers.containsAll(ownersAsNames)) && !permModel.mayRemoveLastOwner(region)) {
-                if (player != null && ownerPlayers.size() == 1 && ownerPlayers.contains(player.getName()) && !permModel.mayRemoveLastOwner(region)){
+                    (ownerPlayersUUID.containsAll(ownersAsUUID)) && !permModel.mayRemoveLastOwner(region)) {
+                if (playerUUID != null && ownerPlayersUUID.size() == 1 && ownerPlayersUUID.contains(playerUUID) && !permModel.mayRemoveLastOwner(region)){
                     throw new CommandException("You can't remove yourself from owner without special permission!");
                 }
-                ownerPlayers.clear();
-                ownerPlayers.addAll(ownersAsNames);
-                if (player != null && ownersAsPlayers.contains(player)) {
-                    ownerPlayers.remove(player.getName());
-                    player.sendMessage(ownersAsUUID.toString());
+                ownerPlayersUUID.clear();
+                ownerPlayersUUID.addAll(ownersAsUUID);
+                if (playerUUID != null && ownersAsUUID.contains(playerUUID)) {
+                    ownerPlayersUUID.remove(playerUUID);
                     ownerPlayersString = new StringBuilder("Other region owners successfully deleted.");
-                } else if (ownersAsPlayers.size() > 0) {
-                    ownerPlayers.remove(0);
+                } else if (ownersAsUUID.size() > 0) {
+                    ownerPlayersUUID.remove(0);
                     ownerPlayersString = new StringBuilder("All owners of the region, except the first, successfully removed.");
                 }
 
             } else if (args.argsLength() < 2) {
                 throw new CommandException("List some names to remove, or use -a to remove all owners except yourself.");
             }
+        }
+
+        ArrayList<String> ownerPlayers = new ArrayList<>();
+        for (UUID uuid : ownerPlayersUUID){
+            String playerName = Bukkit.getOfflinePlayer(uuid).getName();
+            if (playerName != null) ownerPlayers.add(playerName);
         }
 
         // Resolve owners asynchronously
