@@ -185,12 +185,12 @@ class RegionCommandsBase {
         if (set.size() == 0) {
             if (allowGlobal) {
                 ProtectedRegion global = checkExistingRegion(regionManager, "__global__", true);
-                player.sendMessage(ChatColor.GRAY + "You're not standing in any " +
-                        "regions. Using the global region for this world instead.");
+                player.sendMessage(ChatColor.GRAY + "You're not standing in any regions." + "\n" +
+                        "Using the global region for this world instead.");
                 return global;
             }
             throw new CommandException(
-                    "You're not standing in a region." +
+                    "You're not standing in a region." + "\n" +
                             "Specify an ID if you want to select a specific region.");
         } else if (set.size() > 1) {
             StringBuilder builder = new StringBuilder();
@@ -224,10 +224,7 @@ class RegionCommandsBase {
         Selection selection = worldEdit.getSelection(player);
 
         if (selection == null) {
-            throw new CommandException(
-                    "Please select an area first. " +
-                            "Use WorldEdit to make a selection! " +
-                            "(wiki: http://wiki.sk89q.com/wiki/WorldEdit).");
+            throw new CommandException("Please select an area first by using World Edit. ");
         }
 
         return selection;
@@ -243,7 +240,7 @@ class RegionCommandsBase {
     protected static void checkRegionDoesNotExist(RegionManager manager, String id, boolean mayRedefine) throws CommandException {
         if (manager.hasRegion(id)) {
             throw new CommandException("A region with that name already exists. Please choose another name." +
-                    (mayRedefine ? " To change the shape, use /region redefine " + id + "." : ""));
+                    (mayRedefine ? "\n" + "To change the shape, use /region redefine " + id + "." : ""));
         }
     }
 
@@ -256,14 +253,14 @@ class RegionCommandsBase {
      */
     protected static RegionManager checkRegionManager(WorldGuardPlugin plugin, World world) throws CommandException {
         if (!plugin.getGlobalStateManager().get(world).useRegions) {
-            throw new CommandException("Region support is disabled in the target world. " +
-                    "It can be enabled per-world in WorldGuard's configuration files. " +
+            throw new CommandException("Region support is disabled in the target world. " + "\n" +
+                    "It can be enabled per-world in WorldGuard's configuration files. " + "\n" +
                     "However, you may need to restart your server afterwards.");
         }
 
         RegionManager manager = plugin.getRegionContainer().get(world);
         if (manager == null) {
-            throw new CommandException("Region data failed to load for this world. " +
+            throw new CommandException("Region data failed to load for this world. " + "\n" +
                     "Please ask a server administrator to read the logs to identify the reason.");
         }
         return manager;
@@ -313,7 +310,7 @@ class RegionCommandsBase {
             }));
 
             sender.sendMessage(ChatColor.GOLD +
-                    "(Warning: The background saving of region data is failing for these worlds: " + failingList + ". " +
+                    "(Warning: The background saving of region data is failing for these worlds: " + failingList + "." + "\n" +
                     "Your changes are getting lost. See the server log for more information.)");
         }
     }
@@ -341,7 +338,7 @@ class RegionCommandsBase {
     protected static void informNewUser(CommandSender sender, RegionManager manager, ProtectedRegion region) {
         if (manager.getRegions().size() <= 2) {
             sender.sendMessage(ChatColor.GRAY +
-                    "(This region is NOW PROTECTED from modification from others. " +
+                    "(This region is NOW PROTECTED from modification from others. " + "\n" +
                     "Don't want that? Use " +
                     ChatColor.AQUA + "/rg flag " + region.getId() + " passthrough allow" +
                     ChatColor.GRAY + ")");
