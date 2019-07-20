@@ -282,6 +282,11 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
      *
      * @param members the new domain
      */
+    public void setMembers(DefaultDomain members) {
+        checkNotNull(members);
+        setDirty(true);
+        this.members = new DefaultDomain(members);
+    }
 
     public ArrayList<Player> getMembersAsPlayer() {
         ArrayList<Player> members = new ArrayList<>();
@@ -303,12 +308,6 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
             if (uuidPlayer != null) members.add(uuidPlayer.getName());
         }
         return members;
-    }
-
-    public void setMembers(DefaultDomain members) {
-        checkNotNull(members);
-        setDirty(true);
-        this.members = new DefaultDomain(members);
     }
 
     /**

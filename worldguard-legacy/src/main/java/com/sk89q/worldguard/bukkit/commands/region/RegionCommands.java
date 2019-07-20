@@ -64,6 +64,7 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion.CircularInheritanceException;
 import com.sk89q.worldguard.protection.util.DomainInputResolver.UserLocatorPolicy;
 import com.sk89q.worldguard.util.Enums;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
@@ -88,7 +89,7 @@ public final class RegionCommands extends RegionCommandsBase {
         checkNotNull(plugin);
         this.plugin = plugin;
     }
-    
+
     /**
      * Defines a new region.
      * 
@@ -195,26 +196,24 @@ public final class RegionCommands extends RegionCommandsBase {
     /**
      * Claiming command for users.
      * 
-     * <p>This command is a joke and it needs to be rewritten. It was contributed
-     * code :(</p>
-     * 
      * @param args the arguments
      * @param sender the sender
      * @throws CommandException any error
      */
     @Command(aliases = {"claim"},
              usage = "<id>",
+             flags = "r",
              desc = "Claim a region",
-             min = 1, max = 1)
+             min = 1, max = 2)
     public void claim(CommandContext args, CommandSender sender) throws CommandException {
         warnAboutSaveFailures(sender);
 
         Player player = plugin.checkPlayer(sender);
         LocalPlayer localPlayer = plugin.wrapPlayer(player);
         RegionPermissionModel permModel = getPermissionModel(sender);
-
+        boolean isReclaim = args.hasFlag('r');
         // Check permissions
-        if (!permModel.mayClaim()) {
+        if (!permModel.mayClaim() && !isReclaim) {
             throw new CommandPermissionsException();
         }
 
@@ -222,13 +221,27 @@ public final class RegionCommands extends RegionCommandsBase {
 
         RegionManager manager = checkRegionManager(plugin, player.getWorld());
 
-        checkRegionDoesNotExist(manager, id, false);
+        String claimString = !isReclaim ? "claim" : "reclaim";
+
+        ProtectedRegion existing = manager.getRegion(id);
+
+        // Check for an existing region
+        if (existing == null && isReclaim) {
+            throw new CommandException("You can " + claimString + " only existing region.");
+        } else if (existing != null && !isReclaim) {
+            if (existing.getOwners().contains(localPlayer)) {
+                throw new CommandException("A region with that name already exists. Please choose another name." +
+                        (permModel.mayReclaim(existing) ? " To change the shape, use /region claim " + id + " -r." : ""));
+            } else {
+                throw new CommandException("This region already exists and you don't own it.");
+            }
+        }
 
         WorldConfiguration wcfg = plugin.getGlobalStateManager().get(player.getWorld());
 
         if (wcfg.autoSetMaximumRegionProtectHeight){
             if (expandVert(player)){
-                player.sendMessage(ChatColor.YELLOW + "Selection was been vertical expanded.");
+                player.sendMessage(ChatColor.YELLOW + "Selection was been vertical expanded." + ChatColor.RESET);
             }
         }
 
@@ -236,22 +249,13 @@ public final class RegionCommands extends RegionCommandsBase {
         setPlayerSelection(player, region, false);
 
         // Check whether the player has created too many regions
-        if (!permModel.mayClaimRegionsUnbounded()) {
+
+        if (!permModel.mayClaimRegionsUnbounded() && !isReclaim) {
             int maxRegionCount = wcfg.getMaxRegionCount(player);
             if (maxRegionCount >= 0
                     && manager.getRegionCountOfPlayer(localPlayer) >= maxRegionCount) {
                 throw new CommandException(
                         "You own too many regions, delete one first to claim a new one.");
-            }
-        }
-
-        ProtectedRegion existing = manager.getRegion(id);
-
-        // Check for an existing region
-        if (existing != null) {
-            if (!existing.getOwners().contains(localPlayer)) {
-                throw new CommandException(
-                        "This region already exists and you don't own it.");
             }
         }
 
@@ -281,13 +285,12 @@ public final class RegionCommands extends RegionCommandsBase {
             }
         } else {
             if (wcfg.claimOnlyInsideExistingRegions) {
-                throw new CommandException("You may only claim regions inside " +
+                throw new CommandException("You may only " + claimString + " regions inside " +
                         "existing regions that you or your group own.");
             }
         }
-
         if (wcfg.getMaxClaimValues(player) >= Integer.MAX_VALUE) {
-            throw new CommandException("The maximum claim volume get in the configuration is higher than is supported. " +
+            throw new CommandException("The maximum " + claimString + " volume get in the configuration is higher than is supported. " +
                     "Currently, it must be " + Integer.MAX_VALUE + " or smaller. Please contact a server administrator.");
         }
 
@@ -297,48 +300,38 @@ public final class RegionCommands extends RegionCommandsBase {
                 throw new CommandException("Polygons are currently not supported for /rg claim.");
             }
 
-            if (wcfg.protectAreaInsteadVolume && region.area() > wcfg.getMaxClaimValues(player)) {
-                player.sendMessage(ChatColor.RED + "This region is too large to claim.");
-                player.sendMessage(ChatColor.RED +
-                        "Max. area: " + wcfg.getMaxClaimValues(player) + ", your area: " + region.area()+".");
-                return;
-            }
+            checkClaimingSize(wcfg, region, player);
+        }
 
-            else if (!wcfg.protectAreaInsteadVolume && region.volume() > wcfg.getMaxClaimValues(player)) {
-                player.sendMessage(ChatColor.RED + "This region is too large to claim.");
-                player.sendMessage(ChatColor.RED +
-                        "Max. volume: " + wcfg.getMaxClaimValues(player) + ", your volume: " + region.volume()+".");
-                return;
-            }
+        if (isReclaim) {
+            region.setOwners(existing.getOwners());
+            region.setMembers(existing.getMembers());
+            region.setFlags(existing.getFlags());
 
-            else if (wcfg.useRegionMaximumSideLength && !permModel.mayIgnoreRegionMaximumSideLength()){
-                Boolean overmaxX = region.getLength().getBlockX() > wcfg.getMaxRegionLengthValues(player);
-                Boolean overmaxZ = region.getLength().getBlockZ() > wcfg.getMaxRegionLengthValues(player);
-                if (overmaxX || overmaxZ){
-                    player.sendMessage(ChatColor.RED + "This region side length is too large to claim.");
-                    player.sendMessage(ChatColor.RED + "Max. area side length: " + wcfg.getMaxRegionLengthValues(player) + ", your area side length: ");
-                    if (overmaxX) player.sendMessage(ChatColor.RED + "X: " + region.getLength().getBlockX() + " is overmaxed.");
-                    if (overmaxZ) player.sendMessage(ChatColor.RED + "Z: " + region.getLength().getBlockZ() + " is overmaxed.");
-                    return;
-                }
-            }
+            RegionRemover task = new RegionRemover(manager, existing);
+
+            AsyncCommandHelper.wrap(plugin.getExecutorService().submit(task), plugin, sender)
+                    .formatUsing(existing.getId())
+                    .registerWithSupervisor("")
+                    .sendMessageAfterDelay("")
+                    .thenRespondWith("", "");
         }
 
         RegionAdder task = new RegionAdder(plugin, manager, region);
         task.setLocatorPolicy(UserLocatorPolicy.UUID_ONLY);
-        task.setOwnersInput(new String[]{player.getName()});
+        task.setOwnersInput(isReclaim ? new NameFunctions().playerNamesFromUUIDs(existing.getOwnersAsUUID()).toArray(new String[0]) :
+                new String[]{player.getName()});
         ListenableFuture<?> future = plugin.getExecutorService().submit(task);
 
         AsyncCommandHelper.wrap(future, plugin, player)
                 .formatUsing(id)
-                .registerWithSupervisor("Claiming the region '%s'...")
-                .sendMessageAfterDelay("(Please wait... claiming '%s'...)")
+                .registerWithSupervisor("Trying to " + claimString + " the region '%s'...")
+                .sendMessageAfterDelay("(Please wait... " + claimString + "ing '%s'...)")
                 .thenRespondWith(
-                        "A new region has been claimed named '%s'.",
-                        "Failed to claim the region '%s'");
+                        "A new region has been " + claimString + "ed named '%s'.",
+                        "Failed to " + claimString + "the region '%s'");
+
     }
-
-
 
     /**
      * Get a WorldEdit selection from a region.

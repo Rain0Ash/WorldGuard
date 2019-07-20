@@ -36,6 +36,7 @@ import com.sk89q.worldedit.bukkit.selections.CuboidSelection;
 import com.sk89q.worldedit.bukkit.selections.Polygonal2DSelection;
 import com.sk89q.worldedit.bukkit.selections.Selection;
 import com.sk89q.worldguard.bukkit.RegionContainer;
+import com.sk89q.worldguard.bukkit.WorldConfiguration;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.bukkit.permission.RegionPermissionModel;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
@@ -413,7 +414,7 @@ class RegionCommandsBase {
         return JavaPlugin.getPlugin(WorldEditPlugin.class);
     }
 
-    public static boolean expandVert(Player player) throws CommandException{
+    public static boolean expandVert(Player player) throws CommandException {
 
         LocalSession session = getWorldEditPlugin().getSession(player);
 
@@ -432,4 +433,27 @@ class RegionCommandsBase {
         }
         return false;
     }
+
+    public static void checkClaimingSize(WorldConfiguration wcfg, ProtectedRegion region, Player player) throws CommandException {
+        if (wcfg.protectAreaInsteadVolume && region.area() > wcfg.getMaxClaimValues(player)) {
+            throw new CommandException("This region is too large to seize." +
+                    "\n" + "Max. area: " + wcfg.getMaxClaimValues(player) + ", your area: " + region.area() + ".");
+
+        } else if (!wcfg.protectAreaInsteadVolume && region.volume() > wcfg.getMaxClaimValues(player)) {
+            throw new CommandException("This region is too large to seize." + "\n" +
+                    "Max. volume: " + wcfg.getMaxClaimValues(player) + ", your volume: " + region.volume() + ".");
+
+        } else if (wcfg.useRegionMaximumSideLength && !getPermissionModel(player).mayIgnoreRegionMaximumSideLength()) {
+            Boolean overmaxX = region.getLength().getBlockX() > wcfg.getMaxRegionLengthValues(player);
+            Boolean overmaxZ = region.getLength().getBlockZ() > wcfg.getMaxRegionLengthValues(player);
+            if (overmaxX || overmaxZ) {
+                throw new CommandException("This region side length is too large to seize." + "\n" +
+                        "Max. area side length: " + wcfg.getMaxRegionLengthValues(player) + ", your area side length: " + "\n" +
+                        (overmaxX && overmaxZ ? ("X: " + region.getLength().getBlockX() + " is overmaxed." + "\n" + "Z: " + region.getLength().getBlockZ() + " is overmaxed.") :
+                                overmaxX ? ("X: " + region.getLength().getBlockX() + " is overmaxed.") :
+                                        ("Z: " + region.getLength().getBlockZ() + " is overmaxed.")));
+            }
+        }
+    }
+
 }

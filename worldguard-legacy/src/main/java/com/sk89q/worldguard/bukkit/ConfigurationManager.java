@@ -85,7 +85,7 @@ public class ConfigurationManager {
     public boolean useAmphibiousGroup;
     public boolean usePlayerMove;
     public boolean usePlayerTeleports;
-    public boolean useDenyEffect;
+    public String denyEffect;
     public boolean deopOnJoin;
     public boolean blockInGameOp;
     public boolean migrateRegionsToUuid;
@@ -155,7 +155,7 @@ public class ConfigurationManager {
         config.removeProperty("auto-invincible-permission");
         usePlayerMove = config.getBoolean("use-player-move-event", true);
         usePlayerTeleports = config.getBoolean("use-player-teleports", true);
-        useDenyEffect = config.getBoolean("use-deny-effect", false);
+        denyEffect = config.getString("use-deny-effect", null);
 
         deopOnJoin = config.getBoolean("security.deop-everyone-on-join", false);
         blockInGameOp = config.getBoolean("security.block-in-game-op-command", false);

@@ -53,47 +53,6 @@ public class MemberCommands extends RegionCommandsBase {
         this.plugin = plugin;
     }
 
-    private class PlayersName {
-
-        private ArrayList<String> getPlayersNameList(CommandContext args){
-            return new ArrayList<>(new LinkedHashSet<>(Arrays.asList(args.getParsedPaddedSlice(1, 0))));
-        }
-
-        private ArrayList<String> getPlayersNameList(CommandContext args, Boolean sorted){
-            ArrayList<String> argPlayerNameList = getPlayersNameList(args);
-            if (sorted) {
-                Collections.sort(argPlayerNameList, new Comparator<String>() {
-                    @Override
-                    public int compare(String firstString, String secondString) {
-                        return firstString.compareToIgnoreCase(secondString);
-                    }
-                });
-            }
-            return argPlayerNameList;
-        }
-
-        private Iterator<String> getPlayersNameIter(CommandContext args){
-            return getPlayersNameList(args).iterator();
-        }
-
-        private Iterator<String> getPlayersNameIter(CommandContext args, Boolean sorted){
-            return getPlayersNameList(args, sorted).iterator();
-        }
-
-        private String playerNameFromUUID(UUID playerUUID) {
-            return Bukkit.getOfflinePlayer(playerUUID).getName();
-        }
-
-        private ArrayList<String> playerNamesFromUUIDs(ArrayList<UUID> playersUUID) {
-            ArrayList<String> playerNames = new ArrayList<>();
-            for (UUID uuid : playersUUID){
-                String playerName = playerNameFromUUID(uuid);
-                if (playerName != null) playerNames.add(playerName);
-            }
-            return playerNames;
-        }
-    }
-
     @Command(aliases = {"addmember", "addmember", "addmem", "am"},
             usage = "<id> <members...>",
             flags = "nw:",
@@ -116,7 +75,7 @@ public class MemberCommands extends RegionCommandsBase {
 
         ArrayList<Player> membersAsPlayers = region.getMembersAsPlayer();
 
-        Iterator<String> argPlayerNameIter = new PlayersName().getPlayersNameIter(args);
+        Iterator<String> argPlayerNameIter = new NameFunctions().getPlayersNameIter(args);
 
         ArrayList<String> onlineNotMemberPlayers = new ArrayList<>();
         StringBuilder onlineNotMemberPlayersString = new StringBuilder();
@@ -214,7 +173,7 @@ public class MemberCommands extends RegionCommandsBase {
 
         ArrayList<Player> ownersAsPlayers = region.getOwnersAsPlayer();
 
-        Iterator<String> argPlayerNameIter = new PlayersName().getPlayersNameIter(args);
+        Iterator<String> argPlayerNameIter = new NameFunctions().getPlayersNameIter(args);
 
         ArrayList<String> onlineNotOwnerPlayers = new ArrayList<>();
         StringBuilder onlineNotOwnerPlayersString = new StringBuilder();
@@ -297,7 +256,7 @@ public class MemberCommands extends RegionCommandsBase {
 
         ArrayList<UUID> membersAsUUID = region.getMembersAsUUID();
 
-        Iterator<String> argPlayerNameIter = new PlayersName().getPlayersNameIter(args);
+        Iterator<String> argPlayerNameIter = new NameFunctions().getPlayersNameIter(args);
 
         ArrayList<UUID> memberPlayersUUID = new ArrayList<>();
         StringBuilder memberPlayersString = new StringBuilder();
@@ -333,7 +292,7 @@ public class MemberCommands extends RegionCommandsBase {
             throw new CommandException("List some names to remove, or use -a to remove all.");
         }
 
-        ArrayList<String> memberPlayers = new PlayersName().playerNamesFromUUIDs(memberPlayersUUID);
+        ArrayList<String> memberPlayers = new NameFunctions().playerNamesFromUUIDs(memberPlayersUUID);
 
         // Resolve members asynchronously
         DomainInputResolver resolver = new DomainInputResolver(
@@ -386,7 +345,7 @@ public class MemberCommands extends RegionCommandsBase {
 
         ArrayList<UUID> ownersAsUUID = region.getOwnersAsUUID();
 
-        Iterator<String> argPlayerNameIter = new PlayersName().getPlayersNameIter(args);
+        Iterator<String> argPlayerNameIter = new NameFunctions().getPlayersNameIter(args);
 
         ArrayList<UUID> ownerPlayersUUID = new ArrayList<>();
         StringBuilder ownerPlayersString = new StringBuilder();
@@ -447,7 +406,7 @@ public class MemberCommands extends RegionCommandsBase {
             }
         }
 
-        ArrayList<String> ownerPlayers = new PlayersName().playerNamesFromUUIDs(ownerPlayersUUID);
+        ArrayList<String> ownerPlayers = new NameFunctions().playerNamesFromUUIDs(ownerPlayersUUID);
 
         // Resolve owners asynchronously
         DomainInputResolver resolver = new DomainInputResolver(
@@ -511,30 +470,8 @@ public class MemberCommands extends RegionCommandsBase {
                 throw new CommandException("You own too many regions, delete one first to seize a new one.");
             }
 
-            if (wcfg.protectAreaInsteadVolume && region.area() > wcfg.getMaxClaimValues(player)) {
-                player.sendMessage(ChatColor.RED + "This region is too large to seize.");
-                player.sendMessage(ChatColor.RED +
-                        "Max. area: " + wcfg.getMaxClaimValues(player) + ", this region area: " + region.area() + ".");
-                return;
-
-            } else if (!wcfg.protectAreaInsteadVolume && region.volume() > wcfg.getMaxClaimValues(player)) {
-                player.sendMessage(ChatColor.RED + "This region is too large to seize.");
-                player.sendMessage(ChatColor.RED +
-                        "Max. volume: " + wcfg.getMaxClaimValues(player) + ", this region volume: " + region.volume() + ".");
-                return;
-
-            } else if (wcfg.useRegionMaximumSideLength && !getPermissionModel(sender).mayIgnoreRegionMaximumSideLength()) {
-                Boolean overmaxX = region.getLength().getBlockX() > wcfg.getMaxRegionLengthValues(player);
-                Boolean overmaxZ = region.getLength().getBlockZ() > wcfg.getMaxRegionLengthValues(player);
-                if (overmaxX || overmaxZ) {
-                    player.sendMessage(ChatColor.RED + "This region side length is too large to seize.");
-                    player.sendMessage(ChatColor.RED + "Max. area side length: " + wcfg.getMaxRegionLengthValues(player) + ", this region side length: ");
-                    if (overmaxX)
-                        player.sendMessage(ChatColor.RED + "X: " + region.getLength().getBlockX() + " is overmaxed.");
-                    if (overmaxZ)
-                        player.sendMessage(ChatColor.RED + "Z: " + region.getLength().getBlockZ() + " is overmaxed.");
-                    return;
-                }
+            if (!getPermissionModel(sender).maySeizeAnyRegion()) {
+                checkClaimingSize(wcfg, region, player);
             }
         }
 
@@ -552,7 +489,7 @@ public class MemberCommands extends RegionCommandsBase {
 
         AsyncCommandHelper.wrap(future, plugin, sender)
                 .formatUsing(region.getId(), world.getName())
-                .registerWithSupervisor("Adding owners to the region '%s' on '%s'")
+                .registerWithSupervisor("Attempt to seize the region '%s'")
                 .sendMessageAfterDelay("(Please wait... querying player names...)")
                 .thenRespondWith("Successful region seize",
                         "Failed to seize region");
