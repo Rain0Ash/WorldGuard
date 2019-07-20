@@ -97,7 +97,7 @@ public class EventAbstractionListener extends AbstractListener {
         put("smoke", Effect.SMOKE);
         put("flame", Effect.MOBSPAWNER_FLAMES);
         put("ender", Effect.ENDER_SIGNAL);
-    }}.get(new ConfigurationManager(new WorldGuardPlugin()).denyEffect.toLowerCase());
+    }}.get(new ConfigurationManager(new WorldGuardPlugin()).denyEffect.replace(" ", "").toLowerCase());
 
     /**
      * Construct the listener.

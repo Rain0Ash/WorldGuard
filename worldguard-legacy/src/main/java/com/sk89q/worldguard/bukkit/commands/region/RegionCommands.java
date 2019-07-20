@@ -230,8 +230,8 @@ public final class RegionCommands extends RegionCommandsBase {
             throw new CommandException("You can " + claimString + " only existing region.");
         } else if (existing != null && !isReclaim) {
             if (existing.getOwners().contains(localPlayer)) {
-                throw new CommandException("A region with that name already exists. Please choose another name." +
-                        (permModel.mayReclaim(existing) ? " To change the shape, use /region claim " + id + " -r." : ""));
+                throw new CommandException("A region with that name already exists." + "\n" + "Please choose another name." +
+                        (permModel.mayReclaim(existing) ? "\n" + "To change the shape, use /region claim " + id + " -r." : ""));
             } else {
                 throw new CommandException("This region already exists and you don't own it.");
             }
@@ -290,8 +290,8 @@ public final class RegionCommands extends RegionCommandsBase {
             }
         }
         if (wcfg.getMaxClaimValues(player) >= Integer.MAX_VALUE) {
-            throw new CommandException("The maximum " + claimString + " volume get in the configuration is higher than is supported. " +
-                    "Currently, it must be " + Integer.MAX_VALUE + " or smaller. Please contact a server administrator.");
+            throw new CommandException("The maximum " + claimString + " volume get in the configuration is higher than is supported." +
+                    "\n" + "Currently, it must be " + Integer.MAX_VALUE + " or smaller. Please contact a server administrator.");
         }
 
         // Check claim volume
@@ -307,15 +307,8 @@ public final class RegionCommands extends RegionCommandsBase {
             region.setOwners(existing.getOwners());
             region.setMembers(existing.getMembers());
             region.setFlags(existing.getFlags());
-
-            RegionRemover task = new RegionRemover(manager, existing);
-
-            AsyncCommandHelper.wrap(plugin.getExecutorService().submit(task), plugin, sender)
-                    .formatUsing(existing.getId())
-                    .registerWithSupervisor("")
-                    .sendMessageAfterDelay("")
-                    .thenRespondWith("", "");
         }
+
 
         RegionAdder task = new RegionAdder(plugin, manager, region);
         task.setLocatorPolicy(UserLocatorPolicy.UUID_ONLY);

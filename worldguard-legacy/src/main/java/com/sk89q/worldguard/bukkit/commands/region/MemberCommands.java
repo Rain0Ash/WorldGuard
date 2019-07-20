@@ -98,8 +98,8 @@ public class MemberCommands extends RegionCommandsBase {
                     }
                 }
             } else if (sender == null || getPermissionModel(sender).mayAddOfflineMembers(region)) {
-                    onlineNotMemberPlayers.add(argPlayerName);
-                    onlineNotMemberPlayersString.append(onlineNotMemberPlayersString.length() > 0 ? ", " : "").append("[").append(argPlayerName).append("]");
+                onlineNotMemberPlayers.add(argPlayerName);
+                onlineNotMemberPlayersString.append(onlineNotMemberPlayersString.length() > 0 ? ", " : "").append("[").append(argPlayerName).append("]");
             } else {
                 offlinePlayersString.append(offlinePlayersString.length() > 0 ? ", " : "").append("[").append(argPlayerName).append("]");
             }
@@ -286,7 +286,7 @@ public class MemberCommands extends RegionCommandsBase {
                 memberPlayersUUID.addAll(membersAsUUID);
                 memberPlayersString = new StringBuilder("All region members successfully removed.");
             } else {
-                memberPlayersString = new StringBuilder("The region has no owners.");
+                memberPlayersString = new StringBuilder("The region has no members.");
             }
         } else if (args.argsLength() < 2) {
             throw new CommandException("List some names to remove, or use -a to remove all.");
@@ -309,7 +309,7 @@ public class MemberCommands extends RegionCommandsBase {
                 .registerWithSupervisor("Removing members from the region '%s' on '%s'")
                 .sendMessageAfterDelay("(Please wait... querying player names...)")
                 .thenRespondWith(memberPlayersString.toString() +
-                        (notMemberPlayersString.length() > 0 ? ChatColor.RED + "\n" + "Players: " + notMemberPlayersString + " are not owners of the region '" + id + "'." + ChatColor.RESET : ""),
+                        (notMemberPlayersString.length() > 0 ? ChatColor.RED + "\n" + "Players: " + notMemberPlayersString + " are not members of the region '" + id + "'." + ChatColor.RESET : ""),
                         "Failed to remove members");
     }
 
