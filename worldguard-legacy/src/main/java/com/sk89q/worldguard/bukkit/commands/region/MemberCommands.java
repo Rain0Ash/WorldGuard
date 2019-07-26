@@ -37,9 +37,9 @@ import com.sk89q.worldguard.protection.util.DomainInputResolver.UserLocatorPolic
 import com.sk89q.worldguard.protection.flags.DefaultFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -54,9 +54,9 @@ public class MemberCommands extends RegionCommandsBase {
         this.plugin = plugin;
     }
 
-    @Command(aliases = {"addmember", "addmember", "addmem", "am"},
+    @Command(aliases = {"addmember", "addmem", "am"},
             usage = "<id> <members...>",
-            flags = "w",
+            flags = "nw:",
             desc = "Add a member to a region",
             min = 2)
     public void addMember(CommandContext args, CommandSender sender) throws CommandException {
@@ -78,7 +78,7 @@ public class MemberCommands extends RegionCommandsBase {
 
         Iterator<String> argPlayerNameIter = new NameFunctions().getPlayersNameIter(args);
 
-        ArrayList<String> onlineNotMemberPlayers = new ArrayList<>();
+        HashSet<String> onlineNotMemberPlayers = new HashSet<>();
         StringBuilder onlineNotMemberPlayersString = new StringBuilder();
         StringBuilder alreadyMemberPlayersString = new StringBuilder();
         StringBuilder offlinePlayersString = new StringBuilder();
@@ -101,7 +101,7 @@ public class MemberCommands extends RegionCommandsBase {
         // Resolve members asynchronously
         DomainInputResolver resolver = new DomainInputResolver(
                 plugin.getProfileService(), onlineNotMemberPlayers.toArray(new String[0]));
-        resolver.setLocatorPolicy(UserLocatorPolicy.UUID_ONLY);
+        resolver.setLocatorPolicy(args.hasFlag('n') ? UserLocatorPolicy.NAME_ONLY : UserLocatorPolicy.UUID_ONLY);
 
         // Then add it to the members
         ListenableFuture<DefaultDomain> future = Futures.transform(
@@ -119,9 +119,9 @@ public class MemberCommands extends RegionCommandsBase {
                         "Failed to add new members");
     }
 
-    @Command(aliases = {"addowner", "addowner", "ao"},
+    @Command(aliases = {"addowner", "ao"},
             usage = "<id> <owners...>",
-            flags = "w",
+            flags = "nw:",
             desc = "Add an owner to a region",
             min = 2)
     public void addOwner(CommandContext args, CommandSender sender) throws CommandException {
@@ -148,7 +148,7 @@ public class MemberCommands extends RegionCommandsBase {
 
         if (localPlayer != null) {
             if (flag != null && flag && owners != null && owners.size() == 0) {
-                if (!plugin.hasPermission(player, "worldguard.region.unlimited")) {
+                if (!getPermissionModel(sender).mayClaimRegionsUnbounded()) {
                     int maxRegionCount = plugin.getGlobalStateManager().get(world).getMaxRegionCount(player);
                     if (maxRegionCount >= 0 && manager.getRegionCountOfPlayer(localPlayer)
                             >= maxRegionCount) {
@@ -168,7 +168,7 @@ public class MemberCommands extends RegionCommandsBase {
 
         Iterator<String> argPlayerNameIter = new NameFunctions().getPlayersNameIter(args);
 
-        ArrayList<String> onlineNotOwnerPlayers = new ArrayList<>();
+        HashSet<String> onlineNotOwnerPlayers = new HashSet<>();
         StringBuilder onlineNotOwnerPlayersString = new StringBuilder();
         StringBuilder alreadyOwnerPlayersString = new StringBuilder();
         StringBuilder exceededOwnerPlayersString = new StringBuilder();
@@ -197,7 +197,7 @@ public class MemberCommands extends RegionCommandsBase {
                         onlineNotOwnerPlayersString.append(onlineNotOwnerPlayersString.length() > 0 ? ", " : "").append("[").append(argPlayerName).append("]");
                     }
                 }
-            } else if (sender == null || getPermissionModel(sender).mayAddOfflineMembers(region)){
+            } else if (sender == null || getPermissionModel(sender).mayAddOfflineMembers(region)) {
                 onlineNotOwnerPlayers.add(argPlayerName);
                 onlineNotOwnerPlayersString.append(onlineNotOwnerPlayersString.length() > 0 ? ", " : "").append("[").append(argPlayerName).append("]");
             }  else {
@@ -208,7 +208,7 @@ public class MemberCommands extends RegionCommandsBase {
         // Resolve owners asynchronously
         DomainInputResolver resolver = new DomainInputResolver(
                 plugin.getProfileService(), onlineNotOwnerPlayers.toArray(new String[0]));
-        resolver.setLocatorPolicy(UserLocatorPolicy.UUID_ONLY);
+        resolver.setLocatorPolicy(args.hasFlag('n') ? UserLocatorPolicy.NAME_ONLY : UserLocatorPolicy.UUID_ONLY);
 
         // Then add it to the owners
         ListenableFuture<DefaultDomain> future = Futures.transform(
@@ -229,7 +229,7 @@ public class MemberCommands extends RegionCommandsBase {
 
     @Command(aliases = {"removemember", "remmember", "removemem", "remmem", "rm"},
             usage = "<id> <owners...>",
-            flags = "aw:",
+            flags = "naw:",
             desc = "Remove an owner to a region",
             min = 1)
     public void removeMember(CommandContext args, CommandSender sender) throws CommandException {
@@ -251,7 +251,7 @@ public class MemberCommands extends RegionCommandsBase {
 
         Iterator<String> argPlayerNameIter = new NameFunctions().getPlayersNameIter(args);
 
-        ArrayList<UUID> memberPlayersUUID = new ArrayList<>();
+        HashSet<UUID> memberPlayersUUID = new HashSet<>();
         StringBuilder memberPlayersString = new StringBuilder();
         StringBuilder notMemberPlayersString = new StringBuilder();
         while (argPlayerNameIter.hasNext()) {
@@ -272,8 +272,7 @@ public class MemberCommands extends RegionCommandsBase {
         } else {
             memberPlayersString = new StringBuilder("Region '%s' members not changed.");
         }
-        // TODO: Беда с UUID в том что несуществующие никнеймы не могут разрешиться и вернуться. Можно ограничить либо только реальными
-        //  игроками, либо использовать списки с никами и UUID+Name. Отключить NameOnly.
+
         if (args.hasFlag('a')) {
             if (membersAsUUID.size() > 0) {
                 memberPlayersUUID.clear();
@@ -289,6 +288,7 @@ public class MemberCommands extends RegionCommandsBase {
         // Resolve members asynchronously
         DomainInputResolver resolver = new DomainInputResolver(
                 plugin.getProfileService(), new NameFunctions().playerNamesFromUUIDs(memberPlayersUUID).toArray(new String[0]));
+        resolver.setLocatorPolicy(args.hasFlag('n') ? UserLocatorPolicy.NAME_ONLY : UserLocatorPolicy.UUID_AND_NAME);
 
         // Then remove it from the members
         future = Futures.transform(
@@ -307,7 +307,7 @@ public class MemberCommands extends RegionCommandsBase {
 
     @Command(aliases = {"removeowner", "remowner", "ro"},
             usage = "<id> <owners...>",
-            flags = "caw:",
+            flags = "ncaw:",
             desc = "Remove an owner to a region",
             min = 1)
     public void removeOwner(CommandContext args, CommandSender sender) throws CommandException {
@@ -339,7 +339,7 @@ public class MemberCommands extends RegionCommandsBase {
 
         Iterator<String> argPlayerNameIter = new NameFunctions().getPlayersNameIter(args);
 
-        ArrayList<UUID> ownerPlayersUUID = new ArrayList<>();
+        HashSet<UUID> ownerPlayersUUID = new HashSet<>();
         StringBuilder ownerPlayersString = new StringBuilder();
         StringBuilder notOwnerPlayersString = new StringBuilder();
         while (argPlayerNameIter.hasNext()) {
@@ -380,16 +380,21 @@ public class MemberCommands extends RegionCommandsBase {
         } else {
             if (args.hasFlag('a') ||
                     (ownerPlayersUUID.containsAll(ownersAsUUID)) && !permModel.mayRemoveLastOwner(region)) {
-                if (playerUUID != null && ownerPlayersUUID.size() == 1 && ownerPlayersUUID.contains(playerUUID) && !permModel.mayRemoveLastOwner(region)){
+                if (playerUUID != null && ownerPlayersUUID.size() == 1 && ownerPlayersUUID.contains(playerUUID) && !permModel.mayRemoveLastOwner(region)) {
                     throw new CommandException("You can't remove yourself from owner without special permission!");
                 }
                 ownerPlayersUUID.clear();
                 ownerPlayersUUID.addAll(ownersAsUUID);
-                if (playerUUID != null && ownersAsUUID.contains(playerUUID)) {
+                if (ownersAsUUID.size() == 0) {
+                    ownerPlayersString = new StringBuilder("Region already has not owners.");
+                } else if (ownersAsUUID.size() == 1) {
+                    ownerPlayersUUID.remove(ownersAsUUID.get(0));
+                    ownerPlayersString = new StringBuilder(ownersAsUUID.contains(playerUUID) ? "You are the sole owner of the region." : "Region already has only one owner.");
+                } else if (playerUUID != null && ownersAsUUID.contains(playerUUID)) {
                     ownerPlayersUUID.remove(playerUUID);
                     ownerPlayersString = new StringBuilder("Other region owners successfully deleted.");
-                } else if (ownersAsUUID.size() > 0) {
-                    ownerPlayersUUID.remove(0);
+                } else {
+                    ownerPlayersUUID.remove(ownersAsUUID.get(0));
                     ownerPlayersString = new StringBuilder("All owners of the region, except the first, successfully removed.");
                 }
 
@@ -401,7 +406,7 @@ public class MemberCommands extends RegionCommandsBase {
         // Resolve owners asynchronously
         DomainInputResolver resolver = new DomainInputResolver(
                 plugin.getProfileService(), new NameFunctions().playerNamesFromUUIDs(ownerPlayersUUID).toArray(new String[0]));
-        resolver.setLocatorPolicy(UserLocatorPolicy.UUID_AND_NAME);
+        resolver.setLocatorPolicy(args.hasFlag('n') ? UserLocatorPolicy.NAME_ONLY : UserLocatorPolicy.UUID_AND_NAME);
 
         // Then remove it from the owners
         future = Futures.transform(
@@ -419,7 +424,7 @@ public class MemberCommands extends RegionCommandsBase {
 
     @Command(aliases = {"seize", "sr"},
             usage = "[id]",
-            flags = "s",
+            flags = "nw:",
             desc = "Add you to region without owners as owner",
             min = 0, max = 1)
 
@@ -443,13 +448,14 @@ public class MemberCommands extends RegionCommandsBase {
             region = checkExistingRegion(manager, args.getString(0), false);
         }
 
-        if (args.hasFlag('s') && !(getPermissionModel(sender).maySelectRegionWithoutOwners() && region.getOwners().size() == 0)) {
-            setPlayerSelection(player, region);
-            return;
-        }
+        String id = region.getId();
 
         if (!getPermissionModel(sender).maySeizeRegion()) {
             throw new CommandPermissionsException();
+        }
+
+        if (region.getOwners().size() > 0) {
+            throw new CommandException("Region '" + id + "' has owners.");
         }
 
         // Check whether the player has created too many regions
@@ -460,7 +466,7 @@ public class MemberCommands extends RegionCommandsBase {
                 throw new CommandException("You own too many regions, delete one first to seize a new one.");
             }
 
-            if (!getPermissionModel(sender).maySeizeAnyRegion()) {
+            if (!getPermissionModel(sender).maySeizeAnySizeRegion()) {
                 checkClaimingSize(wcfg, region, player);
             }
         }
@@ -470,7 +476,7 @@ public class MemberCommands extends RegionCommandsBase {
         // Resolve owners asynchronously
         DomainInputResolver resolver = new DomainInputResolver(
                 plugin.getProfileService(), new String[] { player.getName() });
-        resolver.setLocatorPolicy(UserLocatorPolicy.UUID_ONLY);
+        resolver.setLocatorPolicy(args.hasFlag('n') ? UserLocatorPolicy.NAME_ONLY : UserLocatorPolicy.UUID_ONLY);
 
         // Then add it to the owners
         ListenableFuture<DefaultDomain> future = Futures.transform(
@@ -481,8 +487,8 @@ public class MemberCommands extends RegionCommandsBase {
                 .formatUsing(region.getId(), world.getName())
                 .registerWithSupervisor("Attempt to seize the region '%s'")
                 .sendMessageAfterDelay("(Please wait... querying player names...)")
-                .thenRespondWith("Successful region seize",
-                        "Failed to seize region");
+                .thenRespondWith("Successful seize region '" + id + "'.",
+                        "Failed to seize region '" + id + "'.");
 
     }
 }

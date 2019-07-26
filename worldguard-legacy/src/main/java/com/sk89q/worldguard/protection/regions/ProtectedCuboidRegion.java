@@ -154,7 +154,7 @@ public class ProtectedCuboidRegion extends ProtectedRegion {
     }
 
     @Override
-    public Vector getLength(){
+    public Vector getLength() {
         return new Vector(
                 max.getBlockX() - min.getBlockX() + 1,
                 max.getBlockY() - min.getBlockY() + 1,

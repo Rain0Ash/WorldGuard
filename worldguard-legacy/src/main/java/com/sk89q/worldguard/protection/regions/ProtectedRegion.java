@@ -791,7 +791,7 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
     }
 
     @Override
-    public int hashCode(){
+    public int hashCode() {
         return id.hashCode();
     }
 

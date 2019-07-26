@@ -26,11 +26,11 @@ import java.util.*;
 
 public class NameFunctions {
 
-    public ArrayList<String> getPlayersNameList(CommandContext args){
+    public ArrayList<String> getPlayersNameList(CommandContext args) {
         return new ArrayList<>(new LinkedHashSet<>(Arrays.asList(args.getParsedPaddedSlice(1, 0))));
     }
 
-    public ArrayList<String> getPlayersNameList(CommandContext args, Boolean sorted){
+    public ArrayList<String> getPlayersNameList(CommandContext args, Boolean sorted) {
         ArrayList<String> argPlayerNameList = getPlayersNameList(args);
         if (sorted) {
             Collections.sort(argPlayerNameList, new Comparator<String>() {
@@ -43,11 +43,11 @@ public class NameFunctions {
         return argPlayerNameList;
     }
 
-    public Iterator<String> getPlayersNameIter(CommandContext args){
+    public Iterator<String> getPlayersNameIter(CommandContext args) {
         return getPlayersNameList(args).iterator();
     }
 
-    public Iterator<String> getPlayersNameIter(CommandContext args, Boolean sorted){
+    public Iterator<String> getPlayersNameIter(CommandContext args, Boolean sorted) {
         return getPlayersNameList(args, sorted).iterator();
     }
 
@@ -55,9 +55,9 @@ public class NameFunctions {
         return Bukkit.getOfflinePlayer(playerUUID).getName();
     }
 
-    public ArrayList<String> playerNamesFromUUIDs(ArrayList<UUID> playersUUID) {
+    public ArrayList<String> playerNamesFromUUIDs(Iterable<UUID> playersUUID) {
         ArrayList<String> playerNames = new ArrayList<>();
-        for (UUID uuid : playersUUID){
+        for (UUID uuid : playersUUID) {
             String playerName = playerNameFromUUID(uuid);
             if (playerName != null) playerNames.add(playerName);
         }

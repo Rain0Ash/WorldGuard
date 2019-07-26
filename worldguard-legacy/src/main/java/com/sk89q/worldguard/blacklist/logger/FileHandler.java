@@ -109,7 +109,7 @@ public class FileHandler implements LoggerHandler {
                     rep = rep.substring(0, 32);
                 }
 
-            }else if (group.matches("%w")) {
+            } else if (group.matches("%w")) {
                 rep = worldName.toLowerCase().replaceAll("[^A-Za-z0-9_]", "_");
                 if (rep.length() > 32) { // Actual max length is 16
                     rep = rep.substring(0, 32);

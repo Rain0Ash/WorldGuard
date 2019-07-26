@@ -29,6 +29,7 @@ import com.sk89q.worldguard.domains.DefaultDomain;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -50,7 +51,8 @@ public class DomainInputResolver implements Callable<DefaultDomain> {
     public enum UserLocatorPolicy {
         UUID_ONLY,
         NAME_ONLY,
-        UUID_AND_NAME
+        UUID_AND_NAME,
+        UUID_OR_NAME
     }
 
     private final ProfileService profileService;
@@ -109,6 +111,7 @@ public class DomainInputResolver implements Callable<DefaultDomain> {
                             domain.addPlayer(s);
                             break;
                         case UUID_ONLY:
+                        case UUID_OR_NAME:
                             namesToQuery.add(s.toLowerCase());
                             break;
                         case UUID_AND_NAME:
@@ -133,7 +136,18 @@ public class DomainInputResolver implements Callable<DefaultDomain> {
         }
 
         if (!namesToQuery.isEmpty()) {
-            throw new UnresolvedNamesException("Unable to resolve the names " + Joiner.on(", ").join(namesToQuery));
+            if (locatorPolicy == UserLocatorPolicy.UUID_OR_NAME) {
+                for (String s : namesToQuery) {
+                    domain.addPlayer(s);
+                }
+            } else {
+                StringBuilder names = new StringBuilder();
+                Iterator<String> namesIter = namesToQuery.iterator();
+                while (namesIter.hasNext()) {
+                    names.append("[").append(namesIter.next()).append("]").append(namesIter.hasNext() ? ", " : "");
+                }
+                throw new UnresolvedNamesException("Unable to resolve the names " + names.toString() + ".");
+            }
         }
 
         return domain;

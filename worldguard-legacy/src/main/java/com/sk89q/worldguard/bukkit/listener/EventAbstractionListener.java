@@ -1018,7 +1018,7 @@ public class EventAbstractionListener extends AbstractListener {
 
     public class SpigotCompatListener implements Listener {
         @EventHandler(ignoreCancelled = true)
-        public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent event){
+        public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent event) {
             onPlayerInteractEntity(event);
         }
 

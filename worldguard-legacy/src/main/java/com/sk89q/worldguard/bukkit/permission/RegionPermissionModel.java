@@ -82,7 +82,7 @@ public class RegionPermissionModel extends AbstractPermissionModel {
         return hasPluginPermission("region.seize");
     }
 
-    public boolean maySeizeAnyRegion() {
+    public boolean maySeizeAnySizeRegion() {
         return hasPluginPermission("region.seize.any");
     }
 

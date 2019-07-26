@@ -349,7 +349,7 @@ public class WorldConfiguration {
         return groupProperty;
     }
 
-    private int getMaxValues(Player player, Map<String, Integer> values, Integer defaultValue){
+    private int getMaxValues(Player player, Map<String, Integer> values, Integer defaultValue) {
         int max = -1;
         for (String group : plugin.getGroups(player)) {
             if (values.containsKey(group)) {

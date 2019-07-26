@@ -99,7 +99,7 @@ public final class RegionCommands extends RegionCommandsBase {
      */
     @Command(aliases = {"define", "def", "d", "create"},
              usage = "<id> [<owner1> [<owner2> [<owners...>]]]",
-             flags = "ng",
+             flags = "g",
              desc = "Defines a region",
              min = 1)
     public void define(CommandContext args, CommandSender sender) throws CommandException {
@@ -239,8 +239,8 @@ public final class RegionCommands extends RegionCommandsBase {
 
         WorldConfiguration wcfg = plugin.getGlobalStateManager().get(player.getWorld());
 
-        if (wcfg.autoSetMaximumRegionProtectHeight){
-            if (expandVert(player)){
+        if (wcfg.autoSetMaximumRegionProtectHeight) {
+            if (expandVert(player)) {
                 player.sendMessage(ChatColor.YELLOW + "Selection was been vertical expanded." + ChatColor.RESET);
             }
         }
@@ -351,7 +351,7 @@ public final class RegionCommands extends RegionCommandsBase {
         }
 
         // Check permissions
-        if (!getPermissionModel(sender).maySelect(existing)) {
+        if (!getPermissionModel(sender).maySelect(existing) && !(getPermissionModel(sender).maySelectRegionWithoutOwners() && existing.getOwners().size() == 0)) {
             throw new CommandPermissionsException();
         }
 

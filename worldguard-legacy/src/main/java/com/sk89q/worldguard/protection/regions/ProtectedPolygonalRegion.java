@@ -183,7 +183,7 @@ public class ProtectedPolygonalRegion extends ProtectedRegion {
     }
 
     @Override
-    public Vector getLength(){
+    public Vector getLength() {
         return new Vector(
                 max.getBlockX() - min.getBlockX() + 1,
                 max.getBlockY() - min.getBlockY() + 1,
@@ -192,7 +192,7 @@ public class ProtectedPolygonalRegion extends ProtectedRegion {
     }
 
     @Override
-    public int area(){
+    public int area() {
         return 0;
     }
 
